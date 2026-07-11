@@ -5,6 +5,18 @@
 -- Safe to re-run multiple times
 -- ============================================================
 
+
+-- ============================================================
+-- SAFETY: Drop everything and start fresh
+-- ============================================================
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON SCHEMA public TO public;
+
+-- ============================================================
+
+
 -- ============================================================
 -- Winga App — Migration 001: Initial Schema
 -- ============================================================
