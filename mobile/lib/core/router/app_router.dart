@@ -23,7 +23,7 @@ import '../../features/earnings/presentation/screens/earnings_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/winga_register_screen.dart';
 import '../widgets/customer_shell.dart';
-// winga_shell in customer_shell.dart
+import '../widgets/winga_shell.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 final _customerShellKey = GlobalKey<NavigatorState>();
