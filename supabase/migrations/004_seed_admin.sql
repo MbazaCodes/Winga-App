@@ -7,6 +7,14 @@
 --   2. public.users table (below) — with user_type = 'admin'
 -- ============================================================
 
+-- Clean up old credentials that block the user ID change
+DELETE FROM public.user_credentials WHERE user_id IN (
+  SELECT id FROM public.users WHERE phone = '+255000000000'
+);
+
+-- Clean up any existing user with this phone
+DELETE FROM public.users WHERE phone = '+255000000000';
+
 -- Grant admin access to support@winga.com
 INSERT INTO public.users (id, phone, email, name, user_type, is_verified)
 VALUES (
@@ -16,10 +24,4 @@ VALUES (
   'Winga Support',
   'admin',
   TRUE
-)
-ON CONFLICT (phone) DO UPDATE SET
-  id      = EXCLUDED.id,
-  email   = EXCLUDED.email,
-  name    = EXCLUDED.name,
-  user_type = EXCLUDED.user_type,
-  is_verified = EXCLUDED.is_verified;
+);
