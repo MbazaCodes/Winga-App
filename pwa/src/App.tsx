@@ -16,6 +16,8 @@ const ProfileScreen     = lazy(() => import('./screens/ProfileScreen'))
 const WingaHomeScreen   = lazy(() => import('./screens/WingaHomeScreen'))
 const WingaEarningsScreen = lazy(() => import('./screens/WingaEarningsScreen'))
 const WingaProfileScreen  = lazy(() => import('./screens/WingaProfileScreen'))
+const RegisterScreen      = lazy(() => import('./screens/RegisterScreen'))
+const WingaRegisterScreen = lazy(() => import('./screens/WingaRegisterScreen'))
 
 // Auth guard
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -58,6 +60,10 @@ export default function App() {
           <Route path="/winga/requests" element={<WingaRoute><RequestsScreen /></WingaRoute>} />
           <Route path="/winga/earnings" element={<WingaRoute><WingaEarningsScreen /></WingaRoute>} />
           <Route path="/winga/profile"  element={<WingaRoute><WingaProfileScreen /></WingaRoute>} />
+
+          {/* Register */}
+          <Route path="/register"       element={<RegisterScreen />} />
+          <Route path="/winga-register" element={<WingaRegisterScreen />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

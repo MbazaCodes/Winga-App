@@ -29,6 +29,14 @@ const externalLinks = [
   { label: 'Mobile App', href: '/mobile/', icon: Smartphone },
 ]
 
+async function handleLogout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' })
+  } finally {
+    window.location.href = '/login'
+  }
+}
+
 export default function Sidebar() {
   const pathname = usePathname()
 
@@ -99,7 +107,7 @@ export default function Sidebar() {
 
       {/* Logout */}
       <div className="px-2 py-4 border-t border-white/10">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:bg-red-500/15 hover:text-red-300 transition-all w-full">
+        <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:bg-red-500/15 hover:text-red-300 transition-all w-full">
           <LogOut className="w-4 h-4 flex-shrink-0" />
           <span className="text-[13px] font-medium">Logout</span>
         </button>

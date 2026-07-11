@@ -83,16 +83,16 @@ export async function POST(request: Request) {
     }
 
     // ── 5. Create session token ───────────────────────────────────
+    // Use Node Buffer.from().toString('base64url') — consistent with
+    // how middleware decodes it (Buffer.from(cookie, 'base64url'))
     const payload = JSON.stringify({
       uid: user.id,
       email: user.email,
+      name: user.name,
       role: 'admin',
-      exp: Date.now() + 86400000,
+      exp: Date.now() + 86400000,  // 24h
     })
-    const token = btoa(payload)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
+    const token = Buffer.from(payload).toString('base64url')
 
     const response = NextResponse.json({
       success: true,
