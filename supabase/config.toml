@@ -1,4 +1,3 @@
-# Winga App — Supabase Configuration
 project_id = "kevdbsyiqelksxvmuped"
 
 [api]
@@ -36,16 +35,6 @@ enable_signup = true
 [auth.sms]
 enable_signup = true
 enable_confirmations = true
-otp_expiry = 300
-
-[auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-auth_token = ""
 
 [edge_runtime]
 enabled = true
-
-[analytics]
-enabled = false
