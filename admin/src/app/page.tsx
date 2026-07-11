@@ -1,3 +1,5 @@
+'use client'
+import { useEffect, useState } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import StatCard from '@/components/ui/StatCard'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -15,6 +17,15 @@ import {
 } from 'lucide-react'
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(setStats)
+      .catch(() => {})
+  }, [])
+
   const s = dashboardStats
   const e = earningsSummary
 

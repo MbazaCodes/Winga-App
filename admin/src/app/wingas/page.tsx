@@ -33,9 +33,9 @@ function AssignBadgeModal({ winga, onClose, onAssign }: {
   const [loading, setLoading] = useState(false)
 
   const tiers = [
-    { name: 'Gold',   fee: 'TZS 30,000/mo', emoji: '\u{1F947}', color: 'border-amber-200 bg-amber-50',   desc: 'Top placement + featured' },
-    { name: 'Silver', fee: 'TZS 15,000/mo', emoji: '\u{1F948}', color: 'border-gray-300 bg-gray-50',     desc: 'Priority listing + analytics' },
-    { name: 'Bronze', fee: 'TZS 5,000/mo',  emoji: '\u{1F949}', color: 'border-orange-200 bg-orange-50',  desc: 'Basic verified listing' },
+    { name: 'Verified', fee: 'TZS 30,000/mo', emoji: '🥇', color: 'border-amber-200 bg-amber-50', desc: 'Top placement + featured' },
+    { name: 'Mid',      fee: 'TZS 15,000/mo', emoji: '🥈', color: 'border-gray-300 bg-gray-50',   desc: 'Priority listing + analytics' },
+    { name: 'Starter',  fee: 'TZS 5,000/mo',  emoji: '🥉', color: 'border-orange-200 bg-orange-50', desc: 'Basic verified listing' },
   ]
 
   const handleAssign = async () => {
@@ -96,7 +96,7 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
   onVerify: (tier: string, notes: string) => void,
   onReject: (reason: string) => void,
 }) {
-  const [tier, setTier] = useState('Gold')
+  const [tier, setTier] = useState('Verified')
   const [notes, setNotes] = useState('')
   const [rejectMode, setRejectMode] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -140,12 +140,12 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
               <div>
                 <label className="text-sm font-semibold text-gray-700 block mb-2">Assign Tier & Badge</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {['Bronze','Silver','Gold'].map(t => (
+                  {['Starter','Mid','Verified'].map(t => (
                     <button key={t} onClick={() => setTier(t)}
                       className={`py-2 rounded-lg text-xs font-semibold border transition-all ${
                         tier===t ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}>
-                      {t==='Bronze'?'🥉':t==='Silver'?'🥈':'🥇'} {t}
+                      {t==='Starter'?'🥉':t==='Mid'?'🥈':'🥇'} {t}
                     </button>
                   ))}
                 </div>

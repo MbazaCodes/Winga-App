@@ -36,7 +36,7 @@ class RequestRepository {
     final rows = await _client
         .from('requests')
         .select()
-        .eq('customer_id', WingaSession.uid!)
+        .eq('customer_id', WingaSession.uid ?? '')
         .order('created_at', ascending: false);
 
     return (rows as List).map((r) => RequestModel.fromJson(r as Map<String, dynamic>)).toList();
@@ -47,7 +47,7 @@ class RequestRepository {
     final rows = await _client
         .from('requests')
         .select()
-        .eq('winga_id', WingaSession.uid!)
+        .eq('winga_id', WingaSession.uid ?? '')
         .order('created_at', ascending: false);
 
     return (rows as List).map((r) => RequestModel.fromJson(r as Map<String, dynamic>)).toList();
