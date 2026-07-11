@@ -87,7 +87,6 @@ function GateWarning({
 const TABS = ['All', 'Active', 'Inactive', 'Pending Verification', 'Suspended']
 
 const BADGE_CONFIG = {
-  none:   { label: '—',             bg: 'bg-gray-100',   text: 'text-gray-400' },
   none:     { label: '—',           bg: 'bg-gray-100',  text: 'text-gray-400' },
   Starter:  { label: '🥉 Starter',  bg: 'bg-orange-50', text: 'text-orange-700' },
   Mid:      { label: '🥈 Mid',      bg: 'bg-gray-100',  text: 'text-gray-600' },
