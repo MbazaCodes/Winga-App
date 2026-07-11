@@ -21,7 +21,7 @@ export default function StatusBadge({ status }: { status: Status }) {
   const cfg = statusConfig[status] ?? { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' }
   return (
     <span className={clsx('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold', cfg.bg, cfg.text)}>
-      <span className={clsx('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+      <span className={clsx('w-[6px] h-[6px] rounded-full', cfg.dot)} />
       {status}
     </span>
   )

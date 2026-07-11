@@ -102,7 +102,7 @@ export default function DashboardPage() {
           </div>
           <div className="text-3xl font-extrabold text-gray-900 mb-1">{formatTZS(s.totalEarnings.value)}</div>
           <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold mb-3">
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="w-[14px] h-[14px]" />
             {s.totalEarnings.change}% vs last week
           </div>
           <EarningsBarChart />
@@ -119,7 +119,7 @@ export default function DashboardPage() {
           </div>
           <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.totalClients.value.toLocaleString()}</div>
           <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold mb-6">
-            <TrendingUp className="w-3.5 h-3.5" />{s.totalClients.change}% vs last week
+            <TrendingUp className="w-[14px] h-[14px]" />{s.totalClients.change}% vs last week
           </div>
           {/* Mini stats grid */}
           <div className="grid grid-cols-2 gap-3 mt-2">
@@ -148,7 +148,7 @@ export default function DashboardPage() {
           </div>
           <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.newWingaSignups.value}</div>
           <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold mb-6">
-            <TrendingUp className="w-3.5 h-3.5" />{s.newWingaSignups.change}% vs last week
+            <TrendingUp className="w-[14px] h-[14px]" />{s.newWingaSignups.change}% vs last week
           </div>
           <div className="space-y-3">
             {[
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   <span className="text-gray-600">{item.label}</span>
                   <span className="text-gray-800 font-semibold">{item.value}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-[6px] bg-gray-100 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${(item.value / 45) * 100}%` }} />
                 </div>
               </div>
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                   <div className="text-[10px] text-gray-500 font-medium mb-1">{item.label}</div>
                   <div className="text-sm font-bold text-gray-900 leading-tight">{formatTZS(item.value)}</div>
                   <div className={`flex items-center gap-0.5 text-[10px] font-semibold mt-0.5 ${item.up ? 'text-green-600' : 'text-red-500'}`}>
-                    {item.up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                    {item.up ? <TrendingUp className="w-[10px] h-[10px]" /> : <TrendingDown className="w-[10px] h-[10px]" />}
                     {item.change}%
                   </div>
                 </div>

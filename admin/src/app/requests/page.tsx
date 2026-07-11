@@ -120,10 +120,10 @@ export default function RequestsPage() {
             <h2 className="text-base font-semibold text-gray-900">All Requests</h2>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Filter className="w-3.5 h-3.5" /> Filter
+                <Filter className="w-[14px] h-[14px]" /> Filter
               </button>
               <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/[0.08] border border-primary/20 px-3 py-2 rounded-lg hover:bg-primary/15 transition-colors">
-                <Download className="w-3.5 h-3.5" /> Export CSV
+                <Download className="w-[14px] h-[14px]" /> Export CSV
               </button>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function RequestsPage() {
               ))}
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-gray-400" />
               <input
                 value={globalFilter}
                 onChange={e => setGlobalFilter(e.target.value)}

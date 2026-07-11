@@ -48,7 +48,7 @@ export default function Header({ title, subtitle, notifCount = 0 }: HeaderProps)
           <div className="text-xs font-semibold text-gray-800 leading-tight">Admin</div>
           <div className="text-[10px] text-gray-500 leading-tight">Super Admin</div>
         </div>
-        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+        <ChevronDown className="w-[14px] h-[14px] text-gray-400" />
       </button>
     </header>
   )

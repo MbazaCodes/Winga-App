@@ -23,7 +23,7 @@ export default function AdminsPage() {
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /><h2 className="text-base font-semibold text-gray-900">Admin Users</h2></div>
             <button className="flex items-center gap-1.5 text-xs font-semibold text-white bg-primary px-3 py-1.5 rounded-lg">
-              <UserPlus className="w-3.5 h-3.5" /> Add Admin
+              <UserPlus className="w-[14px] h-[14px]" /> Add Admin
             </button>
           </div>
           <div className="divide-y divide-gray-50">

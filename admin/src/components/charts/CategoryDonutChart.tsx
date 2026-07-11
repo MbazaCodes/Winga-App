@@ -47,7 +47,7 @@ export default function CategoryDonutChart() {
         {categoryData.map((item) => (
           <div key={item.name} className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
+              <span className="w-[10px] h-[10px] rounded-full flex-shrink-0" style={{ background: item.color }} />
               <span className="text-xs text-gray-600 truncate font-medium">{item.name}</span>
             </div>
             <span className="text-xs font-bold text-gray-800 flex-shrink-0">{item.value}%</span>

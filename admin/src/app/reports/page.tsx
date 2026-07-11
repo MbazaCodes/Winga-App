@@ -54,7 +54,7 @@ export default function ReportsPage() {
             <h2 className="text-base font-semibold text-gray-900">Downloadable Reports</h2>
           </div>
           <button className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/20 bg-primary/5 px-3 py-1.5 rounded-lg">
-            <Download className="w-3.5 h-3.5" /> Download All
+            <Download className="w-[14px] h-[14px]" /> Download All
           </button>
         </div>
         <div className="divide-y divide-gray-50">

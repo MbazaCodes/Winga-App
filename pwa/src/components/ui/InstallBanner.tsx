@@ -8,7 +8,8 @@ export default function InstallBanner() {
   useEffect(() => {
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
     const standalone = window.matchMedia('(display-mode: standalone)').matches
-    const dismissed = localStorage.getItem('install_dismissed')
+    let dismissed: string | null = null
+    try { dismissed = localStorage.getItem('install_dismissed') } catch {}
     setIsIOS(ios)
     if (ios && !standalone && !dismissed) {
       setTimeout(() => setShow(true), 3000)
@@ -27,7 +28,7 @@ export default function InstallBanner() {
       animation: 'slideUp 0.3s ease',
     }}>
       <style>{`@keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }`}</style>
-      <button onClick={() => { setShow(false); localStorage.setItem('install_dismissed', '1') }}
+      <button onClick={() => { setShow(false); try { localStorage.setItem('install_dismissed', '1') } catch {} }}
         style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', width: 28, height: 28, borderRadius: 14, cursor: 'pointer', fontSize: 16 }}>
         ✕
       </button>

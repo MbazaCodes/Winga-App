@@ -28,7 +28,7 @@ export default function RatingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {Array.from({length:5}).map((_,i) => (<Star key={i} className={`w-3.5 h-3.5 ${i<r.rating?'text-amber-400 fill-amber-400':'text-gray-200'}`} />))}
+                  {Array.from({length:5}).map((_,i) => (<Star key={i} className={`w-[14px] h-[14px] ${i<r.rating?'text-amber-400 fill-amber-400':'text-gray-200'}`} />))}
                   <span className="text-xs font-bold text-gray-700 ml-1">{r.rating}.0</span>
                 </div>
               </div>

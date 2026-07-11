@@ -11,7 +11,7 @@ class EarningsRepository {
     final rows = await _client
         .from('transactions')
         .select()
-        .eq('winga_id', WingaSession.uid!)
+        .eq('winga_id', WingaSession.uid ?? '')
         .order('created_at', ascending: false);
 
     return (rows as List)

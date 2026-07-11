@@ -19,9 +19,10 @@ const TABS = ['All', 'Active', 'Inactive', 'Pending Verification', 'Suspended']
 
 const BADGE_CONFIG = {
   none:   { label: '—',             bg: 'bg-gray-100',   text: 'text-gray-400' },
-  Gold:   { label: '\u{1F947} Gold',   bg: 'bg-amber-50',   text: 'text-amber-700' },
-  Silver: { label: '\u{1F948} Silver', bg: 'bg-gray-100',   text: 'text-gray-600' },
-  Bronze: { label: '\u{1F949} Bronze', bg: 'bg-orange-50',  text: 'text-orange-700' },
+  none:     { label: '—',           bg: 'bg-gray-100',  text: 'text-gray-400' },
+  Starter:  { label: '🥉 Starter',  bg: 'bg-orange-50', text: 'text-orange-700' },
+  Mid:      { label: '🥈 Mid',      bg: 'bg-gray-100',  text: 'text-gray-600' },
+  Verified: { label: '🥇 Verified', bg: 'bg-amber-50',  text: 'text-amber-700' },
 }
 
 // Assign Badge Modal
@@ -173,7 +174,7 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
             <>
               <button onClick={() => setRejectMode(true)}
                 className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 text-sm font-medium flex items-center gap-1.5">
-                <XCircle className="w-3.5 h-3.5" /> Reject
+                <XCircle className="w-[14px] h-[14px]" /> Reject
               </button>
               <button onClick={handleVerify} disabled={loading}
                 className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
@@ -218,7 +219,7 @@ export default function WingasPage() {
           <div>
             <div className="flex items-center gap-1">
               <span className="text-sm font-semibold text-gray-800">{row.original.name}</span>
-              {row.original.verified && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+              {row.original.verified && <CheckCircle className="w-[14px] h-[14px] text-primary" />}
             </div>
             <div className="text-[10px] text-gray-400 font-mono">{row.original.wingaId}</div>
           </div>
@@ -243,7 +244,7 @@ export default function WingasPage() {
       accessorKey: 'rating', header: 'Rating',
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+          <Star className="w-[14px] h-[14px] text-amber-400 fill-amber-400" />
           <span className="text-sm font-bold text-gray-800">{row.original.rating}</span>
           <span className="text-xs text-gray-400">({row.original.trips})</span>
         </div>
@@ -255,7 +256,7 @@ export default function WingasPage() {
         const rate = getValue() as number
         return (
           <div className="flex items-center gap-2 w-24">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-[6px] bg-gray-100 rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full" style={{ width: `${rate}%` }} />
             </div>
             <span className="text-xs font-semibold text-gray-700 w-9 text-right">{rate}%</span>
@@ -270,11 +271,11 @@ export default function WingasPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <button className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="View profile">
-            <Eye className="w-3.5 h-3.5 text-primary" />
+            <Eye className="w-[14px] h-[14px] text-primary" />
           </button>
           <button onClick={() => setBadgeModal(row.original)}
             className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors" title="Assign badge">
-            <Award className="w-3.5 h-3.5 text-amber-500" />
+            <Award className="w-[14px] h-[14px] text-amber-500" />
           </button>
           {(row.original.status === 'Pending Verification' || !row.original.verified) && (
             <>
@@ -329,9 +330,9 @@ export default function WingasPage() {
       {/* Badge summary strip */}
       <div className="flex gap-3 mb-4">
         {[
-          { label: '🥇 Gold', count: 145, bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700' },
-          { label: '🥈 Silver', count: 98, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
-          { label: '🥉 Bronze', count: 55, bg: 'bg-orange-50 border-orange-100', text: 'text-orange-700' },
+          { label: '🥇 Verified', count: 145, bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700' },
+          { label: '🥈 Mid', count: 98, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
+          { label: '🥉 Starter', count: 55, bg: 'bg-orange-50 border-orange-100', text: 'text-orange-700' },
           { label: 'No Badge', count: 44, bg: 'bg-red-50 border-red-100', text: 'text-red-500' },
         ].map(b => (
           <div key={b.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${b.bg}`}>
@@ -347,10 +348,10 @@ export default function WingasPage() {
             <h2 className="text-base font-semibold text-gray-900">All Wingas</h2>
             <div className="flex items-center gap-2">
               <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-100">
-                <Filter className="w-3.5 h-3.5" /> Filter
+                <Filter className="w-[14px] h-[14px]" /> Filter
               </button>
               <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/[0.08] border border-primary/20 px-3 py-2 rounded-lg">
-                <Download className="w-3.5 h-3.5" /> Export
+                <Download className="w-[14px] h-[14px]" /> Export
               </button>
             </div>
           </div>
@@ -364,7 +365,7 @@ export default function WingasPage() {
               ))}
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-gray-400" />
               <input value={globalFilter} onChange={e=>setGlobalFilter(e.target.value)} placeholder="Search wingas..."
                 className="pl-8 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>

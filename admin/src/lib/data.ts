@@ -102,19 +102,19 @@ export interface Winga {
   earnings: number
   status: 'Active' | 'Inactive' | 'Suspended' | 'Pending Verification'
   joinDate: string
-  badge: 'Gold' | 'Silver' | 'Bronze'
+  badge: 'Starter' | 'Mid' | 'Verified' | 'none'
   verified: boolean
 }
 
 export const wingas: Winga[] = [
-  { id: '1', wingaId: 'WNGA12345', name: 'Ahmed Juma', phone: '+255 712 345 678', email: 'ahmed@gmail.com', location: 'Kariakoo, DSM', specialty: 'Electronics', rating: 4.9, trips: 250, completionRate: 98, earnings: 328500, status: 'Active', joinDate: 'Mar 12, 2024', badge: 'Gold', verified: true },
-  { id: '2', wingaId: 'WNGA12346', name: 'Bakari Said', phone: '+255 713 456 789', email: 'bakari@gmail.com', location: 'Mwenge, DSM', specialty: 'Clothing', rating: 4.8, trips: 180, completionRate: 96, earnings: 245000, status: 'Active', joinDate: 'Apr 5, 2024', badge: 'Silver', verified: true },
-  { id: '3', wingaId: 'WNGA12347', name: 'Hassan Ally', phone: '+255 714 567 890', email: 'hassan@gmail.com', location: 'Kariakoo, DSM', specialty: 'Hardware', rating: 4.7, trips: 120, completionRate: 94, earnings: 168000, status: 'Active', joinDate: 'May 1, 2024', badge: 'Silver', verified: true },
-  { id: '4', wingaId: 'WNGA12348', name: 'Fatuma Said', phone: '+255 715 678 901', email: 'fatuma@gmail.com', location: 'Kinondoni, DSM', specialty: 'Cosmetics', rating: 4.9, trips: 90, completionRate: 99, earnings: 128000, status: 'Active', joinDate: 'Jun 10, 2024', badge: 'Bronze', verified: true },
-  { id: '5', wingaId: 'WNGA12349', name: 'Omar Rashid', phone: '+255 716 789 012', email: 'omar@gmail.com', location: 'Kariakoo, DSM', specialty: 'General', rating: 4.5, trips: 60, completionRate: 90, earnings: 85000, status: 'Inactive', joinDate: 'Jul 15, 2024', badge: 'Bronze', verified: true },
-  { id: '6', wingaId: 'WNGA12350', name: 'Zakia Amani', phone: '+255 717 890 123', email: 'zakia@gmail.com', location: 'Mwenge, DSM', specialty: 'Grocery', rating: 4.6, trips: 75, completionRate: 92, earnings: 96000, status: 'Active', joinDate: 'Aug 20, 2024', badge: 'Bronze', verified: true },
-  { id: '7', wingaId: 'WNGA12351', name: 'Ibrahim Musa', phone: '+255 718 901 234', email: 'ibrahim@gmail.com', location: 'Kariakoo, DSM', specialty: 'Spare Parts', rating: 4.8, trips: 140, completionRate: 97, earnings: 195000, status: 'Active', joinDate: 'Feb 28, 2024', badge: 'Silver', verified: true },
-  { id: '8', wingaId: 'WNGA12352', name: 'Mwana Baraka', phone: '+255 719 012 345', email: 'mwana@gmail.com', location: 'Kariakoo, DSM', specialty: 'Stationery', rating: 4.4, trips: 45, completionRate: 88, earnings: 62000, status: 'Pending Verification', joinDate: 'Sep 1, 2024', badge: 'Bronze', verified: false },
+  { id: '1', wingaId: 'WNGA12345', name: 'Ahmed Juma', phone: '+255 712 345 678', email: 'ahmed@gmail.com', location: 'Kariakoo, DSM', specialty: 'Electronics', rating: 4.9, trips: 250, completionRate: 98, earnings: 328500, status: 'Active', joinDate: 'Mar 12, 2024', badge: 'Verified', verified: true },
+  { id: '2', wingaId: 'WNGA12346', name: 'Bakari Said', phone: '+255 713 456 789', email: 'bakari@gmail.com', location: 'Mwenge, DSM', specialty: 'Clothing', rating: 4.8, trips: 180, completionRate: 96, earnings: 245000, status: 'Active', joinDate: 'Apr 5, 2024', badge: 'Mid', verified: true },
+  { id: '3', wingaId: 'WNGA12347', name: 'Hassan Ally', phone: '+255 714 567 890', email: 'hassan@gmail.com', location: 'Kariakoo, DSM', specialty: 'Hardware', rating: 4.7, trips: 120, completionRate: 94, earnings: 168000, status: 'Active', joinDate: 'May 1, 2024', badge: 'Mid', verified: true },
+  { id: '4', wingaId: 'WNGA12348', name: 'Fatuma Said', phone: '+255 715 678 901', email: 'fatuma@gmail.com', location: 'Kinondoni, DSM', specialty: 'Cosmetics', rating: 4.9, trips: 90, completionRate: 99, earnings: 128000, status: 'Active', joinDate: 'Jun 10, 2024', badge: 'Starter', verified: true },
+  { id: '5', wingaId: 'WNGA12349', name: 'Omar Rashid', phone: '+255 716 789 012', email: 'omar@gmail.com', location: 'Kariakoo, DSM', specialty: 'General', rating: 4.5, trips: 60, completionRate: 90, earnings: 85000, status: 'Inactive', joinDate: 'Jul 15, 2024', badge: 'Starter', verified: true },
+  { id: '6', wingaId: 'WNGA12350', name: 'Zakia Amani', phone: '+255 717 890 123', email: 'zakia@gmail.com', location: 'Mwenge, DSM', specialty: 'Grocery', rating: 4.6, trips: 75, completionRate: 92, earnings: 96000, status: 'Active', joinDate: 'Aug 20, 2024', badge: 'Starter', verified: true },
+  { id: '7', wingaId: 'WNGA12351', name: 'Ibrahim Musa', phone: '+255 718 901 234', email: 'ibrahim@gmail.com', location: 'Kariakoo, DSM', specialty: 'Spare Parts', rating: 4.8, trips: 140, completionRate: 97, earnings: 195000, status: 'Active', joinDate: 'Feb 28, 2024', badge: 'Mid', verified: true },
+  { id: '8', wingaId: 'WNGA12352', name: 'Mwana Baraka', phone: '+255 719 012 345', email: 'mwana@gmail.com', location: 'Kariakoo, DSM', specialty: 'Stationery', rating: 4.4, trips: 45, completionRate: 88, earnings: 62000, status: 'Pending Verification', joinDate: 'Sep 1, 2024', badge: 'Starter', verified: false },
 ]
 
 // ── Clients ────────────────────────────────────────────────────────────────

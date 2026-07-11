@@ -18,7 +18,7 @@ export function SectionHeader({ title, subtitle, action, periodSelector }: Secti
       <div className="flex items-center gap-2">
         {periodSelector && (
           <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            This Week <ChevronDown className="w-3.5 h-3.5" />
+            This Week <ChevronDown className="w-[14px] h-[14px]" />
           </button>
         )}
         {action}
