@@ -34,21 +34,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    // Verify SHA-256
+    // Verify SHA-256 — match both hex and base64 formats
     const encoder = new TextEncoder()
     const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password))
     const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
-    const base64Hash = Buffer.from(password).toString('base64')
+    const hashBytes = new Uint8Array(hashBuffer)
+    let binary = ''
+    for (let i = 0; i < hashBytes.length; i++) binary += String.fromCharCode(hashBytes[i])
+    const hashBase64 = btoa(binary)
 
-    if (cred.password_hash !== hashHex && cred.password_hash !== base64Hash) {
+    if (cred.password_hash !== hashHex && cred.password_hash !== hashBase64) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     // Sign session
-    const token = Buffer.from(JSON.stringify({
+    const payload = JSON.stringify({
       uid: user.id, email: user.email, role: 'admin',
       exp: Date.now() + 86400000
-    })).toString('base64url')
+    })
+    const token = btoa(payload).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
     const response = NextResponse.json({ success: true, user: { id: user.id, email: user.email, name: user.name } })
     response.cookies.set('winga_admin_session', token, {
