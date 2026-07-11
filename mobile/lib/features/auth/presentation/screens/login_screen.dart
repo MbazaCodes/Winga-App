@@ -333,29 +333,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () => context.push('/winga-register'),
-                      child: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: WingaColors.textSecondary,
+                  Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.push('/winga-register'),
+                        child: RichText(
+                          text: const TextSpan(
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: WingaColors.textSecondary),
+                            children: [
+                              TextSpan(text: 'Ungependa kuwa Winga? '),
+                              TextSpan(text: 'Jiunge hapa', style: TextStyle(color: WingaColors.primary, fontWeight: FontWeight.w600)),
+                            ],
                           ),
-                          children: [
-                            TextSpan(text: 'Ungependa kuwa Winga? '),
-                            TextSpan(
-                              text: 'Jiunge hapa',
-                              style: TextStyle(
-                                color: WingaColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => context.push('/register'),
+                        child: RichText(
+                          text: const TextSpan(
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: WingaColors.textSecondary),
+                            children: [
+                              TextSpan(text: 'Mteja mpya? '),
+                              TextSpan(text: 'Jisajili hapa', style: TextStyle(color: WingaColors.primary, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

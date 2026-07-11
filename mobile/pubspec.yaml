@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # State Management
+  # State management
   flutter_riverpod: ^2.5.1
 
   # Navigation
@@ -19,7 +19,7 @@ dependencies:
   # Backend
   supabase_flutter: ^2.6.0
 
-  # Local Storage
+  # Local storage & session
   shared_preferences: ^2.3.2
 
   # Security
@@ -45,7 +45,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/images/
     - assets/icons/
