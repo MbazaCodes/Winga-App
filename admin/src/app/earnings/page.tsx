@@ -28,7 +28,7 @@ export default function EarningsPage() {
           <table className="w-full">
             <thead><tr className="border-b border-gray-100 bg-gray-50/50">{['Rank','Winga','Total Trips','Gross Earnings','Tax (3%)','Net Earnings','Status'].map(h => (<th key={h} className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>))}</tr></thead>
             <tbody>
-              {wingas.sort((a,b) => b.earnings-a.earnings).map((w,i) => {
+              {[...wingas].sort((a,b) => b.earnings-a.earnings).map((w,i) => {
                 const tax=Math.round(w.earnings*0.03); const net=w.earnings-tax;
                 return (<tr key={w.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                   <td className="px-4 py-3.5"><span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i===0?'bg-amber-100 text-amber-700':i===1?'bg-gray-100 text-gray-600':i===2?'bg-orange-100 text-orange-700':'bg-gray-50 text-gray-400'}`}>{i+1}</span></td>

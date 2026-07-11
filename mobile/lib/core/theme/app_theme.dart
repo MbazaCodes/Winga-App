@@ -297,7 +297,7 @@ ThemeData buildWingaTheme() {
         color: WingaColors.textLight,
       ),
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       color: WingaColors.cardBg,
       elevation: 0,
       shape: RoundedRectangleBorder(

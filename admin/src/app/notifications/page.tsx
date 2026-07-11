@@ -27,7 +27,7 @@ export default function NotificationsPage() {
             return (
               <div key={n.id} className={`bg-white rounded-xl border shadow-card p-4 flex items-start gap-4 ${!n.read ? 'border-primary/20' : 'border-gray-100'}`}>
                 <div className={`w-9 h-9 rounded-xl ${cfg.bg} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className={`w-4.5 h-4.5 ${cfg.color}`} />
+                  <Icon className={`w-[18px] h-[18px] ${cfg.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">

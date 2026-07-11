@@ -1,3 +1,6 @@
+import 'app_constants.dart';
+
+// ignore: constant_identifier_names
 class ApiEndpoints {
   static const base = '${AppConstants.supabaseUrl}/rest/v1';
 
@@ -20,6 +23,3 @@ class ApiEndpoints {
   static const initiatePayment = '${AppConstants.supabaseUrl}/functions/v1/initiate-payment';
   static const sendNotification = '${AppConstants.supabaseUrl}/functions/v1/send-notification';
 }
-
-// ignore: constant_identifier_names
-import 'app_constants.dart';

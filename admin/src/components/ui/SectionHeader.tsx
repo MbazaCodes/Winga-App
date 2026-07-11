@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 
 interface SectionHeaderProps {
@@ -40,8 +41,8 @@ export function DateRangePicker() {
 
 export function ViewAllLink({ href = '#' }: { href?: string }) {
   return (
-    <a href={href} className="text-xs font-semibold text-primary hover:text-primary-dark border border-primary/20 bg-primary/5 px-3 py-1.5 rounded-lg transition-colors">
+    <Link href={href} className="text-xs font-semibold text-primary hover:text-primary-dark border border-primary/20 bg-primary/5 px-3 py-1.5 rounded-lg transition-colors">
       View All
-    </a>
+    </Link>
   )
 }

@@ -104,7 +104,7 @@ class _BookingPreferencesScreenState extends State<BookingPreferencesScreen> {
                   WingaCard(
                     child: Row(
                       children: [
-                        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: WingaColors.primarySurface, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.person_outlined, size: 18, color: WingaColors.primary)),
+                        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: WingaColors.primarySurface, borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.person_outline_rounded, size: 18, color: WingaColors.primary)),
                         const SizedBox(width: 12),
                         const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('Prefer Female Winga', style: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600)),

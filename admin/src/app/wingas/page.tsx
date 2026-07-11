@@ -57,7 +57,7 @@ export default function WingasPage() {
         )
       },
     },
-    { accessorKey: 'specialty', header: 'Specialty', cell: ({ getValue }) => <span className="text-xs bg-primary/8 text-primary px-2 py-0.5 rounded-md font-medium">{getValue() as string}</span> },
+    { accessorKey: 'specialty', header: 'Specialty', cell: ({ getValue }) => <span className="text-xs bg-primary/[0.08] text-primary px-2 py-0.5 rounded-md font-medium">{getValue() as string}</span> },
     { accessorKey: 'location', header: 'Location', cell: ({ getValue }) => <span className="text-xs text-gray-500">{getValue() as string}</span> },
     {
       accessorKey: 'rating',
@@ -148,7 +148,7 @@ export default function WingasPage() {
               <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-100">
                 <Filter className="w-3.5 h-3.5" /> Filter
               </button>
-              <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/8 border border-primary/20 px-3 py-2 rounded-lg">
+              <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/[0.08] border border-primary/20 px-3 py-2 rounded-lg">
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
             </div>

@@ -16,7 +16,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
       {/* Page heading */}
       <div className="hidden lg:block">
-        <h1 className="text-base font-700 text-gray-900 font-bold">{title}</h1>
+        <h1 className="text-base font-bold text-gray-900">{title}</h1>
         {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
       </div>
 
@@ -44,7 +44,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           <span className="text-xs font-bold text-primary">A</span>
         </div>
         <div className="text-left hidden sm:block">
-          <div className="text-xs font-600 text-gray-800 font-semibold leading-tight">Admin</div>
+          <div className="text-xs font-semibold text-gray-800 leading-tight">Admin</div>
           <div className="text-[10px] text-gray-500 leading-tight">Super Admin</div>
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-gray-400" />

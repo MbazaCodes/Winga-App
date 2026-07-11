@@ -30,7 +30,7 @@ export default function RequestsPage() {
       accessorKey: 'id',
       header: 'Request ID',
       cell: ({ getValue }) => (
-        <span className="text-xs font-mono font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-md">{getValue() as string}</span>
+        <span className="text-xs font-mono font-semibold text-primary bg-primary/[0.08] px-2 py-0.5 rounded-md">{getValue() as string}</span>
       ),
     },
     {
@@ -122,7 +122,7 @@ export default function RequestsPage() {
               <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <Filter className="w-3.5 h-3.5" /> Filter
               </button>
-              <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/8 border border-primary/20 px-3 py-2 rounded-lg hover:bg-primary/15 transition-colors">
+              <button className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/[0.08] border border-primary/20 px-3 py-2 rounded-lg hover:bg-primary/15 transition-colors">
                 <Download className="w-3.5 h-3.5" /> Export CSV
               </button>
             </div>

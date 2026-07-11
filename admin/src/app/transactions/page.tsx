@@ -21,7 +21,7 @@ export default function TransactionsPage() {
             <tbody>
               {transactions.map(tx => (
                 <tr key={tx.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-                  <td className="px-4 py-3.5"><span className="text-xs font-mono font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-md">{tx.id}</span></td>
+                  <td className="px-4 py-3.5"><span className="text-xs font-mono font-semibold text-primary bg-primary/[0.08] px-2 py-0.5 rounded-md">{tx.id}</span></td>
                   <td className="px-4 py-3.5"><span className="text-xs text-gray-500 font-mono">{tx.requestId}</span></td>
                   <td className="px-4 py-3.5 text-xs font-medium text-gray-800">{tx.client}</td>
                   <td className="px-4 py-3.5 text-xs text-gray-600">{tx.winga}</td>

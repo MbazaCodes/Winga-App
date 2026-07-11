@@ -5,7 +5,7 @@ import {
   LayoutDashboard, ClipboardList, Users, UserCircle,
   Wallet, CreditCard, Star, Receipt, BarChart3,
   Bell, Settings, Shield, HeadphonesIcon, LogOut,
-  MapPin
+  MapPin, Smartphone
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -23,6 +23,10 @@ const navItems = [
   { label: 'Settings', href: '/settings', icon: Settings },
   { label: 'Admins & Roles', href: '/admins', icon: Shield },
   { label: 'Support', href: '/support', icon: HeadphonesIcon },
+]
+
+const externalLinks = [
+  { label: 'Mobile App', href: '/mobile/', icon: Smartphone },
 ]
 
 export default function Sidebar() {
@@ -54,7 +58,7 @@ export default function Sidebar() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-150 group',
                 isActive
                   ? 'bg-white/15 text-white'
-                  : 'text-white/60 hover:bg-white/8 hover:text-white/90'
+                  : 'text-white/60 hover:bg-white/[0.08] hover:text-white/90'
               )}
             >
               <Icon
@@ -74,6 +78,24 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      {/* External Links */}
+      <div className="px-2 pb-2">
+        <div className="text-[10px] text-white/30 font-semibold uppercase tracking-widest px-3 mb-2">Apps</div>
+        {externalLinks.map((item) => {
+          const Icon = item.icon
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-150 group text-white/60 hover:bg-white/[0.08] hover:text-white/90"
+            >
+              <Icon className="w-4 h-4 flex-shrink-0 text-white/50 group-hover:text-white/80" />
+              <span className="text-[13px] font-medium truncate">{item.label}</span>
+            </a>
+          )
+        })}
+      </div>
 
       {/* Logout */}
       <div className="px-2 py-4 border-t border-white/10">

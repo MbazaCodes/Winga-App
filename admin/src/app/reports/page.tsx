@@ -61,7 +61,7 @@ export default function ReportsPage() {
           {reports.map(r => (
             <div key={r.title} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50/60 transition-colors">
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${r.type === 'PDF' ? 'bg-red-50' : 'bg-green-50'}`}>
-                <FileText className={`w-4.5 h-4.5 ${r.type === 'PDF' ? 'text-red-500' : 'text-green-600'}`} />
+                <FileText className={`w-[18px] h-[18px] ${r.type === 'PDF' ? 'text-red-500' : 'text-green-600'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-gray-800">{r.title}</div>
