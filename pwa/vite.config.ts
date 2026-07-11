@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/mobile/',
+  base: '/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +17,8 @@ export default defineConfig({
         background_color: '#1A5C2A',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/mobile/',
-        scope: '/mobile/',
+        start_url: '/',
+        scope: '/',
         id: 'com.winga.app',
         icons: [
           { src: '/mobile/icons/icon-72.png',   sizes: '72x72',   type: 'image/png' },
