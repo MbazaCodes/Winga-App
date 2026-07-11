@@ -257,7 +257,7 @@ class _ChoiceCard extends StatelessWidget {
                 fontFamily: 'Inter',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: selected ? accent : WingaColors.text,
+                color: selected ? accent : WingaColors.textPrimary,
               ),
             ),
             const SizedBox(height: 2),

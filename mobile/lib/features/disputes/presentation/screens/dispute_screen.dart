@@ -157,7 +157,7 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
                                   : FontWeight.w400,
                               color: selected
                                   ? WingaColors.primary
-                                  : WingaColors.text,
+                                  : WingaColors.textPrimary,
                             ),
                           ),
                         ),

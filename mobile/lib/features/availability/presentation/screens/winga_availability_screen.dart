@@ -128,7 +128,7 @@ class _WingaAvailabilityScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: WingaColors.bg,
+      backgroundColor: WingaColors.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -228,7 +228,7 @@ class _DayRow extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: entry.isActive
-                      ? WingaColors.text
+                      ? WingaColors.textPrimary
                       : WingaColors.textSecondary,
                 ),
               ),

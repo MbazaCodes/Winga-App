@@ -335,7 +335,7 @@ class _MessageBubble extends StatelessWidget {
                         fontSize: 14,
                         color: isMe
                             ? Colors.white
-                            : WingaColors.text,
+                            : WingaColors.textPrimary,
                       ),
                     ),
                   const SizedBox(height: 2),
@@ -521,7 +521,7 @@ class _SubstitutionCardState extends State<_SubstitutionCard> {
                   style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
-                      color: WingaColors.text)),
+                      color: WingaColors.textPrimary)),
             ),
           ],
         ),
