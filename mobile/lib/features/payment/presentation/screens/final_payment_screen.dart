@@ -5,7 +5,11 @@ import '../../../../core/widgets/winga_button.dart';
 import '../../../../core/widgets/winga_widgets.dart';
 
 class FinalPaymentScreen extends StatefulWidget {
-  const FinalPaymentScreen({super.key});
+  /// Id of the request being paid for. Passed through to the rating screen so
+  /// the customer's point is attached to the correct trip.
+  final String requestId;
+
+  const FinalPaymentScreen({super.key, this.requestId = ''});
   @override
   State<FinalPaymentScreen> createState() => _FinalPaymentScreenState();
 }
@@ -289,13 +293,18 @@ class _FinalPaymentScreenState extends State<FinalPaymentScreen> {
                 style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: WingaColors.textSecondary)),
             const SizedBox(height: 24),
             WingaButton(
-              label: 'Rate Ahmed Juma ⭐',
-              onPressed: () { Navigator.pop(context); ctx.go('/home'); },
+              label: 'Mpe Pointi Ahmed Juma ⭐',
+              onPressed: () {
+                Navigator.pop(ctx);
+                // Hand off to the real rating screen so the point is actually
+                // recorded. requestId comes from the active booking.
+                ctx.go('/rate?request=${widget.requestId}&winga=Ahmed%20Juma');
+              },
             ),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: () { Navigator.pop(context); ctx.go('/home'); },
-              child: const Text('Skip', style: TextStyle(fontFamily: 'Inter', color: WingaColors.textSecondary)),
+              onPressed: () { Navigator.pop(ctx); ctx.go('/home'); },
+              child: const Text('Ruka', style: TextStyle(fontFamily: 'Inter', color: WingaColors.textSecondary)),
             ),
           ],
         ),

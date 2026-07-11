@@ -22,6 +22,7 @@ import '../../features/requests/presentation/screens/my_requests_screen.dart';
 import '../../features/earnings/presentation/screens/earnings_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/winga_register_screen.dart';
+import '../../features/rating/presentation/screens/rate_trip_screen.dart';
 import '../widgets/customer_shell.dart';
 import '../widgets/winga_shell.dart';
 
@@ -47,6 +48,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (ctx, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/rate',
+        builder: (ctx, state) {
+          final requestId = state.uri.queryParameters['request'] ?? '';
+          final wingaName = state.uri.queryParameters['winga'] ?? 'Winga';
+          return RateTripScreen(requestId: requestId, wingaName: wingaName);
+        },
       ),
       GoRoute(
         path: '/otp',
@@ -155,7 +164,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // ── Payment ───────────────────────────────────────────────────
       GoRoute(
         path: '/payment/final',
-        builder: (ctx, state) => const FinalPaymentScreen(),
+        builder: (ctx, state) => FinalPaymentScreen(
+          requestId: state.uri.queryParameters['request'] ?? '',
+        ),
       ),
     ],
   );

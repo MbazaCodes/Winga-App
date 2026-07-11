@@ -115,11 +115,45 @@ export async function getPendingVerifications() {
 }
 
 // ── Admin actions ─────────────────────────────────────────────────────────
-export async function verifyWinga(wingaId: string, tier: string, notes?: string) {
+export interface Eligibility {
+  eligible: boolean
+  reason: string
+  rated_trips?: number
+  required_trips?: number
+  score?: number
+  required_score?: number
+}
+
+/** Can this Winga hold this tier, based on customer points? */
+export async function checkTierEligibility(
+  wingaId: string,
+  tier: string
+): Promise<Eligibility> {
+  const { data, error } = await supabase.rpc('check_tier_eligibility', {
+    p_winga_id: wingaId,
+    p_tier: tier,
+  })
+  if (error) throw error
+  return data as Eligibility
+}
+
+/**
+ * Verify a Winga. Points GATE the tier: paying is necessary but not
+ * sufficient. If the Winga has not earned the tier the RPC returns
+ * { error: 'blocked_by_points' } and nothing is written — unless the admin
+ * passes override, which is recorded in the audit log.
+ */
+export async function verifyWinga(
+  wingaId: string,
+  tier: string,
+  notes?: string,
+  override = false
+) {
   const { data, error } = await supabase.rpc('admin_verify_winga', {
     p_winga_id: wingaId,
     p_tier: tier,
     p_notes: notes || null,
+    p_override: override,
   })
   if (error) throw error
   return data
@@ -134,11 +168,33 @@ export async function rejectWinga(wingaId: string, reason: string) {
   return data
 }
 
-export async function assignBadge(wingaId: string, badge: string) {
+export async function assignBadge(
+  wingaId: string,
+  badge: string,
+  override = false
+) {
   const { data, error } = await supabase.rpc('admin_assign_badge', {
     p_winga_id: wingaId,
     p_badge: badge,
+    p_override: override,
   })
+  if (error) throw error
+  return data
+}
+
+/** Leaderboard, ranked by Wilson score (not raw point totals). */
+export async function getLeaderboard(limit = 50) {
+  const { data, error } = await supabase
+    .from('v_winga_leaderboard')
+    .select('*')
+    .limit(limit)
+  if (error) throw error
+  return data
+}
+
+/** Recompute the Top Rated set. Normally nightly; this is the manual trigger. */
+export async function refreshTopRated() {
+  const { data, error } = await supabase.rpc('refresh_top_rated')
   if (error) throw error
   return data
 }

@@ -9,11 +9,80 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import StatusBadge from '@/components/ui/StatusBadge'
 import StatCard from '@/components/ui/StatCard'
 import { wingas, formatTZS, type Winga } from '@/lib/data'
+import { verifyWinga, assignBadge } from '@/lib/queries'
 import {
   Search, Filter, Download, Eye, CheckCircle, XCircle,
   Users, UserCheck, Star, Clock, ChevronLeft, ChevronRight,
-  ChevronUp, ChevronDown, Shield, Award
+  ChevronUp, ChevronDown, Shield, Award, AlertTriangle
 } from 'lucide-react'
+
+
+// Point requirements per tier — mirrors public.tier_requirements in the DB.
+// Paying is necessary but NOT sufficient: a Winga with poor service points
+// cannot buy their way into Mid/Verified.
+const TIER_REQS: Record<string, { trips: number; score: number }> = {
+  Starter:  { trips: 0,  score: 0    },
+  Mid:      { trips: 10, score: 0.60 },
+  Verified: { trips: 30, score: 0.80 },
+}
+
+function tierEligibility(w: Winga, tier: string) {
+  const req = TIER_REQS[tier]
+  if (!req) return { eligible: false, reason: `Unknown tier ${tier}` }
+  if (w.ratedTrips < req.trips) {
+    return {
+      eligible: false,
+      reason: `Needs ${req.trips} rated trips — has ${w.ratedTrips}`,
+    }
+  }
+  if (w.wingaScore < req.score) {
+    return {
+      eligible: false,
+      reason: `Service score ${w.wingaScore.toFixed(2)} is below ${req.score.toFixed(2)}`,
+    }
+  }
+  return { eligible: true, reason: `Meets ${tier} requirements` }
+}
+
+// Warning banner shown when the admin picks a tier the Winga has not earned.
+function GateWarning({
+  elig, override, setOverride,
+}: {
+  elig: { eligible: boolean; reason: string }
+  override: boolean
+  setOverride: (v: boolean) => void
+}) {
+  if (elig.eligible) {
+    return (
+      <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 border border-green-100">
+        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-green-700">{elig.reason}</p>
+      </div>
+    )
+  }
+  return (
+    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="text-xs font-semibold text-amber-800">Not earned yet</p>
+          <p className="text-xs text-amber-700 mt-0.5">{elig.reason}</p>
+        </div>
+      </div>
+      <label className="flex items-center gap-2 mt-2.5 pl-6 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={override}
+          onChange={e => setOverride(e.target.checked)}
+          className="accent-amber-600"
+        />
+        <span className="text-xs text-amber-800">
+          Approve anyway — logged to audit trail
+        </span>
+      </label>
+    </div>
+  )
+}
 
 const TABS = ['All', 'Active', 'Inactive', 'Pending Verification', 'Suspended']
 
@@ -28,10 +97,14 @@ const BADGE_CONFIG = {
 // Assign Badge Modal
 function AssignBadgeModal({ winga, onClose, onAssign }: {
   winga: Winga, onClose: () => void,
-  onAssign: (badge: string) => void
+  onAssign: (badge: string, override: boolean) => void
 }) {
   const [selected, setSelected] = useState('')
   const [loading, setLoading] = useState(false)
+  const [override, setOverride] = useState(false)
+
+  const elig = selected ? tierEligibility(winga, selected) : null
+  const blocked = !!elig && !elig.eligible && !override
 
   const tiers = [
     { name: 'Verified', fee: 'TZS 30,000/mo', emoji: '🥇', color: 'border-amber-200 bg-amber-50', desc: 'Top placement + featured' },
@@ -43,7 +116,7 @@ function AssignBadgeModal({ winga, onClose, onAssign }: {
     if (!selected) return
     setLoading(true)
     await new Promise(r => setTimeout(r, 800))
-    onAssign(selected)
+    onAssign(selected, override)
     setLoading(false)
     onClose()
   }
@@ -75,15 +148,21 @@ function AssignBadgeModal({ winga, onClose, onAssign }: {
             </button>
           ))}
         </div>
+        {elig && (
+          <div className="px-6 pb-2">
+            <GateWarning elig={elig} override={override} setOverride={setOverride} />
+          </div>
+        )}
         <div className="p-6 border-t border-gray-100 flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">
             Cancel
           </button>
-          <button onClick={handleAssign} disabled={!selected || loading}
-            className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={handleAssign} disabled={!selected || loading || blocked}
+            title={blocked && elig ? elig.reason : undefined}
+            className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
             {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Award className="w-4 h-4" />}
-            Assign Badge
+            {blocked ? 'Blocked by points' : 'Assign Badge'}
           </button>
         </div>
       </div>
@@ -94,7 +173,7 @@ function AssignBadgeModal({ winga, onClose, onAssign }: {
 // Verify Modal
 function VerifyModal({ winga, onClose, onVerify, onReject }: {
   winga: Winga, onClose: () => void,
-  onVerify: (tier: string, notes: string) => void,
+  onVerify: (tier: string, notes: string, override: boolean) => void,
   onReject: (reason: string) => void,
 }) {
   const [tier, setTier] = useState('Verified')
@@ -102,11 +181,16 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
   const [rejectMode, setRejectMode] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [loading, setLoading] = useState(false)
+  const [override, setOverride] = useState(false)
+
+  // Points gate: recomputed whenever the admin changes the tier.
+  const elig = tierEligibility(winga, tier)
+  const blocked = !elig.eligible && !override
 
   const handleVerify = async () => {
     setLoading(true)
     await new Promise(r => setTimeout(r, 800))
-    onVerify(tier, notes)
+    onVerify(tier, notes, override)
     setLoading(false)
     onClose()
   }
@@ -151,6 +235,7 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
                   ))}
                 </div>
               </div>
+              <GateWarning elig={elig} override={override} setOverride={setOverride} />
               <div>
                 <label className="text-sm font-semibold text-gray-700 block mb-2">Verification Notes (optional)</label>
                 <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}
@@ -176,10 +261,11 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
                 className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 text-sm font-medium flex items-center gap-1.5">
                 <XCircle className="w-[14px] h-[14px]" /> Reject
               </button>
-              <button onClick={handleVerify} disabled={loading}
-                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={handleVerify} disabled={loading || blocked}
+                title={blocked ? elig.reason : undefined}
+                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                 {loading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Verify as {tier}
+                {blocked ? 'Blocked by points' : `Verify as ${tier}`}
               </button>
             </>
           ) : (
@@ -235,6 +321,34 @@ export default function WingasPage() {
           <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
             {cfg.label}
           </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'wingaScore', header: 'Points',
+      cell: ({ row }) => {
+        const w = row.original
+        if (w.ratedTrips === 0) {
+          return <span className="text-xs text-gray-400">no ratings</span>
+        }
+        const provisional = w.ratedTrips < 10
+        const rate = Math.round((w.totalPoints / w.ratedTrips) * 100)
+        return (
+          <div className="flex items-center gap-2">
+            {w.isTopRated && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 whitespace-nowrap">
+                ⭐ Top
+              </span>
+            )}
+            <div>
+              <div className="text-sm font-semibold text-gray-800">
+                {w.totalPoints}<span className="text-gray-400 font-normal">/{w.ratedTrips}</span>
+              </div>
+              <div className={`text-[10px] ${provisional ? 'text-gray-400' : 'text-gray-500'}`}>
+                {provisional ? 'provisional' : `${rate}% · score ${w.wingaScore.toFixed(2)}`}
+              </div>
+            </div>
+          </div>
         )
       },
     },
@@ -308,7 +422,7 @@ export default function WingasPage() {
         <VerifyModal
           winga={verifyModal}
           onClose={() => setVerifyModal(null)}
-          onVerify={(tier, notes) => console.log('Verify', verifyModal.id, tier, notes)}
+          onVerify={(tier, notes, override) => verifyWinga(verifyModal.id, tier, notes, override).catch(console.error)}
           onReject={(reason) => console.log('Reject', verifyModal.id, reason)}
         />
       )}
@@ -316,7 +430,7 @@ export default function WingasPage() {
         <AssignBadgeModal
           winga={badgeModal}
           onClose={() => setBadgeModal(null)}
-          onAssign={(badge) => console.log('Badge', badgeModal.id, badge)}
+          onAssign={(badge, override) => assignBadge(badgeModal.id, badge, override).catch(console.error)}
         />
       )}
 

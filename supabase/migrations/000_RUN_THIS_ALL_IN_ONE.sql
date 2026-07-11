@@ -1,21 +1,14 @@
 -- ============================================================
 -- Winga App — COMPLETE DATABASE SETUP (All-in-One)
--- Run this ENTIRE file in Supabase SQL Editor
+-- Run this ENTIRE file in the Supabase SQL Editor.
 -- https://supabase.com/dashboard/project/kevdbsyiqelksxvmuped/sql/new
--- Safe to re-run multiple times
+-- Safe to re-run: it drops and rebuilds the public schema.
 -- ============================================================
 
-
--- ============================================================
--- SAFETY: Drop everything and start fresh
--- ============================================================
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 GRANT ALL ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON SCHEMA public TO public;
-
--- ============================================================
-
 
 -- ============================================================
 -- Winga App — Migration 001: Initial Schema
@@ -261,6 +254,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_winga     ON public.transactions(win
 CREATE INDEX IF NOT EXISTS idx_ver_payments_winga     ON public.verification_payments(winga_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user     ON public.notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_winga_docs_winga       ON public.winga_documents(winga_id);
+
+
 -- ============================================================
 -- Winga App — Migration 002: RLS Policies
 -- ============================================================
@@ -380,6 +375,8 @@ CREATE POLICY "audit_admin_only" ON public.admin_audit_log
 
 -- Grant execute to anon/authenticated
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
+
+
 -- ============================================================
 -- Winga App — Migration 003: Triggers & DB Functions
 -- ============================================================
@@ -713,6 +710,8 @@ GRANT EXECUTE ON FUNCTION public.admin_reject_winga(UUID, TEXT)           TO aut
 GRANT EXECUTE ON FUNCTION public.admin_assign_badge(UUID, TEXT)           TO authenticated;
 GRANT EXECUTE ON FUNCTION public.confirm_verification_payment(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.expire_subscriptions()                   TO service_role;
+
+
 -- ============================================================
 -- Winga App — Migration 004: Seed Admin User
 -- ============================================================
@@ -738,6 +737,8 @@ SELECT
 FROM public.users 
 WHERE phone = '+255000000000'
 ON CONFLICT (phone) DO NOTHING;
+
+
 -- Drop views first (safe re-run)
 DROP VIEW IF EXISTS public.v_dashboard_stats CASCADE;
 DROP VIEW IF EXISTS public.v_pending_verifications CASCADE;
@@ -887,6 +888,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 GRANT EXECUTE ON FUNCTION public.get_dashboard_stats() TO authenticated, service_role;
+
+
 -- ============================================================
 -- Winga App — Migration 006: Storage Buckets
 -- For document uploads (Winga verification docs, profile photos)
@@ -938,3 +941,584 @@ CREATE POLICY "app_assets_public_read"
 CREATE POLICY "app_assets_admin_write"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'app-assets' AND public.is_admin());
+
+
+-- ============================================================
+-- Winga App — Migration 007: Points & Reputation System
+--
+-- Customer rates each completed trip:
+--   Good service = 1 point
+--   Bad service  = 0 points
+--
+-- "Best Winga" ranking uses a WILSON LOWER BOUND score, not raw totals.
+-- Raw totals reward volume (500/900 = 56% good beats 90/90 = 100% good).
+-- A raw percentage rewards flukes (3/3 = 100% beats 200/205 = 97.5%).
+-- Wilson gives the *statistically confident* minimum quality:
+--   3/3     -> 0.44   (not enough evidence yet)
+--   90/90   -> 0.96
+--   500/900 -> 0.53
+-- ============================================================
+
+-- ── Points ledger — one row per rated trip ────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.winga_points (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  winga_id    UUID NOT NULL REFERENCES public.wingas(id)  ON DELETE CASCADE,
+  request_id  UUID NOT NULL REFERENCES public.requests(id) ON DELETE CASCADE,
+  customer_id UUID NOT NULL REFERENCES public.users(id),
+  point       INT  NOT NULL CHECK (point IN (0, 1)),   -- 1 = good, 0 = bad
+  reason      TEXT,                                    -- optional customer note
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  -- one rating per request: a customer cannot farm points for a Winga
+  CONSTRAINT uniq_point_per_request UNIQUE (request_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_points_winga    ON public.winga_points(winga_id);
+CREATE INDEX IF NOT EXISTS idx_points_customer ON public.winga_points(customer_id);
+
+-- ── Denormalised counters on wingas (kept in sync by trigger) ─────────────
+ALTER TABLE public.wingas
+  ADD COLUMN IF NOT EXISTS total_points   INT NOT NULL DEFAULT 0,  -- good trips
+  ADD COLUMN IF NOT EXISTS rated_trips    INT NOT NULL DEFAULT 0,  -- good + bad
+  ADD COLUMN IF NOT EXISTS point_rate     NUMERIC(5,2) NOT NULL DEFAULT 0,  -- % good
+  ADD COLUMN IF NOT EXISTS winga_score    NUMERIC(6,4) NOT NULL DEFAULT 0,  -- Wilson 0..1
+  ADD COLUMN IF NOT EXISTS is_top_rated   BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS idx_wingas_score     ON public.wingas(winga_score DESC);
+CREATE INDEX IF NOT EXISTS idx_wingas_top_rated ON public.wingas(is_top_rated);
+
+-- ── Wilson lower bound (95% confidence) ───────────────────────────────────
+-- z = 1.96. Returns 0 when there are no rated trips.
+CREATE OR REPLACE FUNCTION public.wilson_score(good INT, total INT)
+RETURNS NUMERIC AS $$
+DECLARE
+  z    CONSTANT NUMERIC := 1.96;
+  phat NUMERIC;
+BEGIN
+  IF total <= 0 THEN RETURN 0; END IF;
+  phat := good::NUMERIC / total::NUMERIC;
+  RETURN ROUND(
+    (
+      phat + (z*z) / (2*total)
+      - z * SQRT( (phat * (1 - phat) + (z*z) / (4*total)) / total )
+    ) / (1 + (z*z) / total)
+  , 4);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ── Recalculate a Winga's reputation after any rating change ──────────────
+CREATE OR REPLACE FUNCTION public.recalc_winga_points()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_winga UUID := COALESCE(NEW.winga_id, OLD.winga_id);
+  v_good  INT;
+  v_total INT;
+BEGIN
+  SELECT COALESCE(SUM(point), 0), COUNT(*)
+    INTO v_good, v_total
+  FROM public.winga_points
+  WHERE winga_id = v_winga;
+
+  UPDATE public.wingas SET
+    total_points = v_good,
+    rated_trips  = v_total,
+    point_rate   = CASE WHEN v_total = 0 THEN 0
+                        ELSE ROUND(v_good * 100.0 / v_total, 2) END,
+    winga_score  = public.wilson_score(v_good, v_total)
+  WHERE id = v_winga;
+
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_recalc_points ON public.winga_points;
+CREATE TRIGGER trg_recalc_points
+  AFTER INSERT OR UPDATE OR DELETE ON public.winga_points
+  FOR EACH ROW EXECUTE FUNCTION public.recalc_winga_points();
+
+-- ── Tier eligibility gate ─────────────────────────────────────────────────
+-- Points can now unlock or BLOCK a badge tier. Paying is necessary but not
+-- sufficient — a Winga with poor service cannot buy their way to Verified.
+--
+--   Starter  : no requirement (entry tier)
+--   Mid      : >= 10 rated trips AND score >= 0.60
+--   Verified : >= 30 rated trips AND score >= 0.80
+CREATE TABLE IF NOT EXISTS public.tier_requirements (
+  tier          TEXT PRIMARY KEY REFERENCES public.verification_tiers(name),
+  min_rated_trips INT     NOT NULL DEFAULT 0,
+  min_score       NUMERIC NOT NULL DEFAULT 0
+);
+
+INSERT INTO public.tier_requirements (tier, min_rated_trips, min_score) VALUES
+  ('Starter',   0,  0.00),
+  ('Mid',      10,  0.60),
+  ('Verified', 30,  0.80)
+ON CONFLICT (tier) DO UPDATE
+  SET min_rated_trips = EXCLUDED.min_rated_trips,
+      min_score       = EXCLUDED.min_score;
+
+-- Returns eligibility + a human-readable reason, so the admin panel and the
+-- Winga app can both explain *why* an upgrade is blocked.
+CREATE OR REPLACE FUNCTION public.check_tier_eligibility(
+  p_winga_id UUID,
+  p_tier     TEXT
+)
+RETURNS JSONB AS $$
+DECLARE
+  w   RECORD;
+  req RECORD;
+BEGIN
+  SELECT rated_trips, winga_score, total_points
+    INTO w FROM public.wingas WHERE id = p_winga_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('eligible', false, 'reason', 'Winga not found');
+  END IF;
+
+  SELECT * INTO req FROM public.tier_requirements WHERE tier = p_tier;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('eligible', false, 'reason', 'Unknown tier: ' || p_tier);
+  END IF;
+
+  IF w.rated_trips < req.min_rated_trips THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', format('Inahitaji safari %s zilizopimwa (ana %s)',
+                       req.min_rated_trips, w.rated_trips),
+      'rated_trips', w.rated_trips,
+      'required_trips', req.min_rated_trips,
+      'score', w.winga_score,
+      'required_score', req.min_score
+    );
+  END IF;
+
+  IF w.winga_score < req.min_score THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', format('Alama ya huduma ni ndogo mno (%s, inahitajika %s)',
+                       w.winga_score, req.min_score),
+      'rated_trips', w.rated_trips,
+      'required_trips', req.min_rated_trips,
+      'score', w.winga_score,
+      'required_score', req.min_score
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'eligible', true,
+    'reason', 'Anastahili tier ya ' || p_tier,
+    'rated_trips', w.rated_trips,
+    'score', w.winga_score
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- ── Customer awards a point ───────────────────────────────────────────────
+-- Only the customer on the request, only once, only after completion.
+CREATE OR REPLACE FUNCTION public.rate_winga(
+  p_request_id UUID,
+  p_point      INT,          -- 1 = good service, 0 = bad service
+  p_reason     TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+  r RECORD;
+BEGIN
+  IF p_point NOT IN (0, 1) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'point must be 0 or 1');
+  END IF;
+
+  SELECT id, customer_id, winga_id, status
+    INTO r FROM public.requests WHERE id = p_request_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Request not found');
+  END IF;
+  IF r.customer_id <> auth.uid() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Only the customer on this request can rate it');
+  END IF;
+  IF r.status <> 'completed' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Request is not completed yet');
+  END IF;
+  IF r.winga_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'No Winga assigned to this request');
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.winga_points WHERE request_id = p_request_id) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'This trip has already been rated');
+  END IF;
+
+  INSERT INTO public.winga_points (winga_id, request_id, customer_id, point, reason)
+  VALUES (r.winga_id, p_request_id, r.customer_id, p_point, p_reason);
+
+  -- trigger has now refreshed the counters
+  RETURN (
+    SELECT jsonb_build_object(
+      'success', true,
+      'point', p_point,
+      'total_points', w.total_points,
+      'rated_trips', w.rated_trips,
+      'point_rate', w.point_rate,
+      'score', w.winga_score
+    )
+    FROM public.wingas w WHERE w.id = r.winga_id
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── Refresh the "Top Rated" set ───────────────────────────────────────────
+-- Top Rated = active + verified + meets a real evidence bar + top 10%.
+-- Run nightly (pg_cron) or from the admin panel.
+CREATE OR REPLACE FUNCTION public.refresh_top_rated()
+RETURNS JSONB AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE public.wingas SET is_top_rated = FALSE WHERE is_top_rated = TRUE;
+
+  WITH eligible AS (
+    SELECT id,
+           NTILE(10) OVER (ORDER BY winga_score DESC, rated_trips DESC) AS decile
+    FROM public.wingas
+    WHERE status = 'active'
+      AND verification_status = 'verified'
+      AND rated_trips >= 10        -- evidence bar: no 3/3 flukes
+      AND winga_score >= 0.75
+  )
+  UPDATE public.wingas w
+     SET is_top_rated = TRUE
+    FROM eligible e
+   WHERE w.id = e.id AND e.decile = 1;
+
+  SELECT COUNT(*) INTO v_count FROM public.wingas WHERE is_top_rated;
+  RETURN jsonb_build_object('success', true, 'top_rated_count', v_count);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── Leaderboard view ──────────────────────────────────────────────────────
+DROP VIEW IF EXISTS public.v_winga_leaderboard CASCADE;
+CREATE OR REPLACE VIEW public.v_winga_leaderboard AS
+SELECT
+  w.id,
+  w.winga_id,
+  w.name,
+  w.specialty,
+  w.home_location,
+  w.badge,
+  w.total_points,
+  w.rated_trips,
+  w.point_rate,
+  w.winga_score,
+  w.is_top_rated,
+  w.total_trips,
+  w.total_earnings,
+  w.is_online,
+  RANK() OVER (ORDER BY w.winga_score DESC, w.rated_trips DESC) AS rank
+FROM public.wingas w
+WHERE w.status = 'active'
+  AND w.verification_status = 'verified'
+ORDER BY w.winga_score DESC, w.rated_trips DESC;
+
+GRANT SELECT ON public.v_winga_leaderboard TO anon, authenticated, service_role;
+
+-- ── Featured Wingas for the customer Home screen ──────────────────────────
+CREATE OR REPLACE FUNCTION public.get_featured_wingas(p_limit INT DEFAULT 10)
+RETURNS TABLE (
+  id UUID, winga_id TEXT, name TEXT, specialty TEXT, home_location TEXT,
+  badge TEXT, total_points INT, rated_trips INT, point_rate NUMERIC,
+  winga_score NUMERIC, is_top_rated BOOLEAN, is_online BOOLEAN, rating NUMERIC
+) AS $$
+  SELECT w.id, w.winga_id, w.name, w.specialty, w.home_location,
+         w.badge, w.total_points, w.rated_trips, w.point_rate,
+         w.winga_score, w.is_top_rated, w.is_online, w.rating
+  FROM public.wingas w
+  WHERE w.status = 'active'
+    AND w.verification_status = 'verified'
+    AND w.is_top_rated = TRUE
+  ORDER BY w.winga_score DESC, w.is_online DESC, w.rated_trips DESC
+  LIMIT p_limit;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- ── RLS ───────────────────────────────────────────────────────────────────
+ALTER TABLE public.winga_points      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tier_requirements ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "points_public_read"   ON public.winga_points;
+DROP POLICY IF EXISTS "points_customer_own"  ON public.winga_points;
+DROP POLICY IF EXISTS "points_admin"         ON public.winga_points;
+DROP POLICY IF EXISTS "tier_req_public_read" ON public.tier_requirements;
+DROP POLICY IF EXISTS "tier_req_admin"       ON public.tier_requirements;
+
+-- Anyone can read points (they drive public reputation)
+CREATE POLICY "points_public_read" ON public.winga_points
+  FOR SELECT USING (true);
+-- Only the rating customer may insert (rate_winga enforces the rest)
+CREATE POLICY "points_customer_own" ON public.winga_points
+  FOR INSERT WITH CHECK (auth.uid() = customer_id);
+CREATE POLICY "points_admin" ON public.winga_points
+  FOR ALL USING (public.is_admin());
+
+CREATE POLICY "tier_req_public_read" ON public.tier_requirements
+  FOR SELECT USING (true);
+CREATE POLICY "tier_req_admin" ON public.tier_requirements
+  FOR ALL USING (public.is_admin());
+
+GRANT EXECUTE ON FUNCTION public.wilson_score(INT, INT)              TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.rate_winga(UUID, INT, TEXT)         TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_tier_eligibility(UUID, TEXT)  TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_featured_wingas(INT)            TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.refresh_top_rated()                 TO service_role;
+
+
+-- ============================================================
+-- Winga App — Migration 008: Enforce point-based tier gating
+--
+-- Paying the monthly fee is now NECESSARY BUT NOT SUFFICIENT.
+-- A Winga with poor service points cannot buy their way into Mid/Verified.
+--
+-- Admin can still override (p_override = true) — e.g. a Winga with great
+-- offline reputation but few rated trips. Overrides are written to the
+-- audit log with the reason, so the decision is always attributable.
+-- ============================================================
+
+-- Drop the OLD ungated signatures from migration 003 first.
+-- Postgres overloads on signature, so without these DROPs the ungated
+-- 3-arg admin_verify_winga(uuid,text,text) would survive and could be called
+-- to bypass the points gate entirely.
+DROP FUNCTION IF EXISTS public.admin_verify_winga(UUID, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.admin_assign_badge(UUID, TEXT);
+
+-- ── admin_verify_winga: now checks eligibility ────────────────────────────
+CREATE OR REPLACE FUNCTION public.admin_verify_winga(
+  p_winga_id UUID,
+  p_tier     TEXT,
+  p_notes    TEXT    DEFAULT NULL,
+  p_override BOOLEAN DEFAULT FALSE
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_admin_id UUID;
+  v_tier_id  UUID;
+  v_winga    RECORD;
+  v_elig     JSONB;
+BEGIN
+  v_admin_id := auth.uid();
+  IF NOT public.is_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized — admin only');
+  END IF;
+
+  SELECT id INTO v_tier_id FROM public.verification_tiers WHERE name = p_tier;
+  IF v_tier_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid tier: ' || p_tier);
+  END IF;
+
+  SELECT * INTO v_winga FROM public.wingas WHERE id = p_winga_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Winga not found');
+  END IF;
+
+  -- POINT GATE
+  v_elig := public.check_tier_eligibility(p_winga_id, p_tier);
+  IF NOT (v_elig->>'eligible')::BOOLEAN AND NOT p_override THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'blocked_by_points',
+      'message', v_elig->>'reason',
+      'eligibility', v_elig,
+      'hint', 'Pass p_override => true to approve anyway (logged to audit trail)'
+    );
+  END IF;
+
+  UPDATE public.wingas SET
+    verification_status = 'verified',
+    verification_tier   = p_tier,
+    tier_id             = v_tier_id,
+    badge               = p_tier,
+    verified_at         = NOW(),
+    verified_by         = v_admin_id,
+    verification_notes  = p_notes,
+    status              = 'active',
+    badge_assigned_at   = NOW(),
+    badge_assigned_by   = v_admin_id,
+    badge_expires_at    = NOW() + INTERVAL '30 days'
+  WHERE id = p_winga_id;
+
+  UPDATE public.users SET is_verified = TRUE WHERE id = v_winga.user_id;
+
+  INSERT INTO public.admin_audit_log (admin_id, action, target_type, target_id, details)
+  VALUES (v_admin_id,
+          CASE WHEN p_override THEN 'verify_winga_OVERRIDE' ELSE 'verify_winga' END,
+          'winga', p_winga_id,
+          jsonb_build_object('tier', p_tier, 'notes', p_notes,
+                             'override', p_override, 'eligibility', v_elig));
+
+  INSERT INTO public.notifications (user_id, title, body, type, data)
+  VALUES (
+    v_winga.user_id,
+    '🎉 Hongera! Umeidhinishwa kama Winga',
+    'Akaunti yako imeidhinishwa kama ' || p_tier || ' Winga. Sasa unaweza kupokea maombi!',
+    'verification',
+    jsonb_build_object('tier', p_tier, 'winga_id', p_winga_id)
+  );
+
+  RETURN jsonb_build_object('success', true, 'tier', p_tier,
+                            'winga_id', p_winga_id, 'override', p_override);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── admin_assign_badge: now checks eligibility ────────────────────────────
+CREATE OR REPLACE FUNCTION public.admin_assign_badge(
+  p_winga_id UUID,
+  p_badge    TEXT,
+  p_override BOOLEAN DEFAULT FALSE
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_winga RECORD;
+  v_elig  JSONB;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized');
+  END IF;
+  IF p_badge NOT IN ('Starter', 'Mid', 'Verified') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid badge. Use: Starter, Mid, Verified');
+  END IF;
+
+  SELECT * INTO v_winga FROM public.wingas WHERE id = p_winga_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Winga not found');
+  END IF;
+
+  -- POINT GATE (downgrades are always allowed — only upgrades are gated)
+  v_elig := public.check_tier_eligibility(p_winga_id, p_badge);
+  IF NOT (v_elig->>'eligible')::BOOLEAN AND NOT p_override THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'blocked_by_points',
+      'message', v_elig->>'reason',
+      'eligibility', v_elig
+    );
+  END IF;
+
+  UPDATE public.wingas SET
+    badge             = p_badge,
+    verification_tier = p_badge,
+    badge_assigned_at = NOW(),
+    badge_assigned_by = auth.uid(),
+    badge_expires_at  = NOW() + INTERVAL '30 days'
+  WHERE id = p_winga_id;
+
+  INSERT INTO public.admin_audit_log (admin_id, action, target_type, target_id, details)
+  VALUES (auth.uid(),
+          CASE WHEN p_override THEN 'assign_badge_OVERRIDE' ELSE 'assign_badge' END,
+          'winga', p_winga_id,
+          jsonb_build_object('badge', p_badge, 'previous_badge', v_winga.badge,
+                             'override', p_override, 'eligibility', v_elig));
+
+  INSERT INTO public.notifications (user_id, title, body, type, data)
+  VALUES (
+    v_winga.user_id,
+    'Badge Yako Imesasishwa — ' || p_badge,
+    'Hongera! Umepewa badge ya ' || p_badge || ' kwenye Winga App.',
+    'verification',
+    jsonb_build_object('badge', p_badge)
+  );
+
+  RETURN jsonb_build_object('success', true, 'badge', p_badge,
+                            'winga_id', p_winga_id, 'override', p_override);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ── Payment: warn instead of silently taking money for a blocked tier ─────
+-- confirm_verification_payment now records the payment (the Winga did pay)
+-- but flags it when the tier is not yet earned, so the admin sees it and the
+-- Winga is told *why* they are not upgraded yet rather than just waiting.
+CREATE OR REPLACE FUNCTION public.confirm_verification_payment(
+  p_winga_id       UUID,
+  p_tier_name      TEXT,
+  p_payment_method TEXT,
+  p_mobile_number  TEXT DEFAULT NULL,
+  p_provider_ref   TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_tier    RECORD;
+  v_winga   RECORD;
+  v_payment UUID;
+  v_elig    JSONB;
+BEGIN
+  SELECT * INTO v_tier FROM public.verification_tiers WHERE name = p_tier_name;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid tier');
+  END IF;
+
+  SELECT * INTO v_winga FROM public.wingas WHERE id = p_winga_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Winga not found');
+  END IF;
+
+  v_elig := public.check_tier_eligibility(p_winga_id, p_tier_name);
+
+  INSERT INTO public.verification_payments
+    (winga_id, tier_id, amount, payment_method, mobile_number, provider_ref, status, paid_at)
+  VALUES
+    (p_winga_id, v_tier.id, v_tier.monthly_fee, p_payment_method,
+     p_mobile_number, p_provider_ref, 'success', NOW())
+  RETURNING id INTO v_payment;
+
+  UPDATE public.wingas SET
+    verification_status = 'under_review',
+    verification_tier   = p_tier_name,
+    tier_id             = v_tier.id,
+    subscription_active = TRUE,
+    subscription_start  = NOW(),
+    subscription_end    = NOW() + INTERVAL '30 days',
+    next_payment_due    = NOW() + INTERVAL '30 days',
+    last_payment_date   = NOW(),
+    last_payment_amount = v_tier.monthly_fee
+  WHERE id = p_winga_id;
+
+  -- Tell the Winga the truth about where they stand
+  IF (v_elig->>'eligible')::BOOLEAN THEN
+    INSERT INTO public.notifications (user_id, title, body, type, data)
+    VALUES (v_winga.user_id, 'Malipo Yamefanikiwa ✓',
+      'Malipo ya TZS ' || v_tier.monthly_fee || ' kwa tier ya ' || p_tier_name ||
+      ' yamefanikiwa. Akaunti yako iko chini ya ukaguzi.',
+      'payment',
+      jsonb_build_object('tier', p_tier_name, 'amount', v_tier.monthly_fee,
+                         'payment_id', v_payment, 'eligible', true));
+  ELSE
+    INSERT INTO public.notifications (user_id, title, body, type, data)
+    VALUES (v_winga.user_id, 'Malipo Yamepokelewa — Bado Hujafikia Kiwango',
+      'Tumepokea TZS ' || v_tier.monthly_fee || '. Lakini: ' || (v_elig->>'reason') ||
+      '. Endelea kutoa huduma nzuri ili kufikia tier ya ' || p_tier_name || '.',
+      'verification',
+      jsonb_build_object('tier', p_tier_name, 'amount', v_tier.monthly_fee,
+                         'payment_id', v_payment, 'eligible', false,
+                         'eligibility', v_elig));
+  END IF;
+
+  -- Admin queue, flagged when the tier is not earned
+  INSERT INTO public.notifications (user_id, title, body, type, data)
+  SELECT id,
+    CASE WHEN (v_elig->>'eligible')::BOOLEAN
+         THEN 'Winga Amelipa — ' || v_winga.name
+         ELSE '⚠️ Malipo Bila Kustahili — ' || v_winga.name END,
+    p_tier_name || ' · TZS ' || v_tier.monthly_fee || ' · ' || (v_elig->>'reason'),
+    'verification',
+    jsonb_build_object('winga_id', p_winga_id, 'tier', p_tier_name,
+                       'payment_id', v_payment, 'eligibility', v_elig)
+  FROM public.users WHERE user_type = 'admin';
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'payment_id', v_payment,
+    'tier', p_tier_name,
+    'amount', v_tier.monthly_fee,
+    'status', 'under_review',
+    'eligibility', v_elig
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.admin_verify_winga(UUID, TEXT, TEXT, BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_assign_badge(UUID, TEXT, BOOLEAN)        TO authenticated;
+GRANT EXECUTE ON FUNCTION public.confirm_verification_payment(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated;
