@@ -1,0 +1,21 @@
+# Flutter / Dart
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+*.g.dart
+*.freezed.dart
+
+# Next.js / Node
+admin/.next/
+admin/node_modules/
+admin/.env
+admin/.env.local
+
+# General
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.iml
