@@ -14,6 +14,7 @@ class CustomerHomeScreen extends StatefulWidget {
 class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final _searchCtrl = TextEditingController();
   int _notifCount = 3;
+  String _currentCity = 'Kariakoo, Dar es Salaam';
 
   @override
   void dispose() {
@@ -85,7 +86,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 color: WingaColors.primary, size: 20),
                             const SizedBox(width: 4),
                             const Text(
-                              'Kariakoo',
+                              _currentCity,
                               style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 15,

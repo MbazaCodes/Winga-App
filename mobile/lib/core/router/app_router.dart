@@ -23,6 +23,14 @@ import '../../features/earnings/presentation/screens/earnings_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/winga_register_screen.dart';
 import '../../features/rating/presentation/screens/rate_trip_screen.dart';
+import '../../features/chat/presentation/screens/chat_screen.dart';
+import '../../features/chat/presentation/screens/substitution_proposal_screen.dart';
+import '../../features/location/presentation/screens/city_picker_screen.dart';
+import '../../features/shopping_list/presentation/screens/shopping_list_screen.dart';
+import '../../features/referral/presentation/screens/referral_screen.dart';
+import '../../features/availability/presentation/screens/winga_availability_screen.dart';
+import '../../features/disputes/presentation/screens/dispute_screen.dart';
+
 import '../widgets/customer_shell.dart';
 import '../widgets/winga_shell.dart';
 
@@ -48,6 +56,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (ctx, state) => const LoginScreen(),
+      ),
+      // ── New feature routes ──────────────────────────────────
+      GoRoute(
+        path: '/chat/:requestId',
+        builder: (ctx, state) => ChatScreen(
+          requestId: state.pathParameters['requestId'] ?? '',
+          wingaName: state.uri.queryParameters['winga'] ?? 'Winga',
+          isWinga: state.uri.queryParameters['role'] == 'winga',
+        ),
+      ),
+      GoRoute(
+        path: '/chat/:requestId/substitution',
+        builder: (ctx, state) => SubstitutionProposalScreen(
+          requestId: state.pathParameters['requestId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/pick-city',
+        builder: (ctx, state) => const CityPickerScreen(),
+      ),
+      GoRoute(
+        path: '/shopping-list/:requestId',
+        builder: (ctx, state) => ShoppingListScreen(
+          requestId: state.pathParameters['requestId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/referral',
+        builder: (ctx, state) => const ReferralScreen(),
+      ),
+      GoRoute(
+        path: '/availability/:wingaId',
+        builder: (ctx, state) => WingaAvailabilityScreen(
+          wingaId: state.pathParameters['wingaId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/dispute/:requestId',
+        builder: (ctx, state) => DisputeScreen(
+          requestId: state.pathParameters['requestId'] ?? '',
+        ),
       ),
       GoRoute(
         path: '/rate',
