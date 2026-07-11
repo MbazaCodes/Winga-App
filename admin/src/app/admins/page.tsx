@@ -2,7 +2,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import { Shield, UserPlus } from 'lucide-react'
 
 const admins = [
-  { name: 'Super Admin', email: 'admin@winga.co.tz', role: 'Super Admin', status: 'Active', lastLogin: 'Today 10:45 AM' },
+  { name: 'Winga Support', email: 'support@winga.com', role: 'Super Admin', status: 'Active', lastLogin: 'Today 10:45 AM' },
   { name: 'Ops Manager', email: 'ops@winga.co.tz', role: 'Operations', status: 'Active', lastLogin: 'Today 09:00 AM' },
   { name: 'Finance Lead', email: 'finance@winga.co.tz', role: 'Finance', status: 'Active', lastLogin: 'Yesterday' },
   { name: 'Support Agent', email: 'support@winga.co.tz', role: 'Support', status: 'Active', lastLogin: '2 days ago' },

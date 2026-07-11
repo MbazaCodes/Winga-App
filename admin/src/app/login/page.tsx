@@ -61,7 +61,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@winga.co.tz" required
+                  placeholder="support@winga.com" required
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A5C2A]/20 focus:border-[#1A5C2A]/40" />
               </div>
             </div>
