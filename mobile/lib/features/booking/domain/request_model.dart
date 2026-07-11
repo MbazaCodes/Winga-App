@@ -59,7 +59,33 @@ class RequestModel {
         'service_type': serviceType,
         'delivery_method': deliveryMethod,
         'estimated_price': estimatedPrice,
-        'note': note,
+        'final_price': finalPrice,
         'status': status,
+        'note': note,
+        'created_at': createdAt.toIso8601String(),
+        'completed_at': completedAt?.toIso8601String(),
       };
+
+  RequestModel copyWith({
+    String? wingaId,
+    String? status,
+    int? finalPrice,
+    DateTime? completedAt,
+  }) =>
+      RequestModel(
+        id: id,
+        customerId: customerId,
+        wingaId: wingaId ?? this.wingaId,
+        category: category,
+        meetingPoint: meetingPoint,
+        shoppingArea: shoppingArea,
+        serviceType: serviceType,
+        deliveryMethod: deliveryMethod,
+        estimatedPrice: estimatedPrice,
+        finalPrice: finalPrice ?? this.finalPrice,
+        status: status ?? this.status,
+        note: note,
+        createdAt: createdAt,
+        completedAt: completedAt ?? this.completedAt,
+      );
 }

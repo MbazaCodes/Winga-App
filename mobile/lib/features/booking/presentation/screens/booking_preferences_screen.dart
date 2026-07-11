@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/booking_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/winga_button.dart';
 import '../../../../core/widgets/winga_widgets.dart';
 
-class BookingPreferencesScreen extends StatefulWidget {
+class BookingPreferencesScreen extends ConsumerStatefulWidget {
   const BookingPreferencesScreen({super.key});
   @override
   State<BookingPreferencesScreen> createState() => _BookingPreferencesScreenState();
 }
 
-class _BookingPreferencesScreenState extends State<BookingPreferencesScreen> {
+class _BookingPreferencesScreenState extends ConsumerState<BookingPreferencesScreen> {
   final Set<int> _goals = {0};
   final Set<int> _languages = {0};
   bool _preferFemale = false;

@@ -5,9 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/constants/app_constants.dart';
+import 'core/utils/session.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load session from SharedPreferences BEFORE routing
+  await WingaSession.load();
 
   // Initialize Supabase
   await Supabase.initialize(
@@ -15,7 +19,6 @@ void main() async {
     anonKey: AppConstants.supabaseAnonKey,
   );
 
-  // Lock to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -37,7 +40,6 @@ class WingaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-
     return MaterialApp.router(
       title: 'Winga App',
       debugShowCheckedModeBanner: false,

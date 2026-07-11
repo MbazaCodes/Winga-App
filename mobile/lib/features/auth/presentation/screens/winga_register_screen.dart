@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/winga_button.dart';
@@ -56,7 +57,22 @@ class _State extends State<WingaRegisterScreen> {
           const SizedBox(height: 16),
           SafetyBanner(message: 'Your safety matters\nAll Winga accounts are verified and background-checked to ensure a safe community.'),
           const SizedBox(height: 20),
-          WingaButton(label: 'Continue', trailing: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20), onPressed: () => context.go('/winga-home')),
+          WingaButton(
+              label: 'Continue',
+              trailing: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+              onPressed: () async {
+                // TODO: Validate all fields
+                // Call register-winga Edge Function
+                try {
+                  final supabase = Supabase.instance.client;
+                  // Registration handled via Edge Function
+                  // supabase.functions.invoke('register-winga', body: {...})
+                  context.go('/winga-home');
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Registration failed: \$e')));
+                }
+              }),
           const SizedBox(height: 14),
           Center(child: GestureDetector(onTap: () => context.go('/login'), child: RichText(text: const TextSpan(style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: WingaColors.textSecondary), children: [TextSpan(text: 'Already have an account? '), TextSpan(text: 'Login', style: TextStyle(color: WingaColors.primary, fontWeight: FontWeight.w600))])))),
           const SizedBox(height: 32),

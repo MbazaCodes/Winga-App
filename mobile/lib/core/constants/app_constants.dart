@@ -1,19 +1,30 @@
 class AppConstants {
-  // Supabase
-  static const supabaseUrl = 'https://kevdbsyiqelksxvmuped.supabase.co';
-  static const supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtldmRic3lpcWVsa3N4dm11cGVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzUyMjIsImV4cCI6MjA5OTMxMTIyMn0.pNmc5HGE9huxmh4-eqveLETkxnxJ_j5rigeS8t35o2A';
+  // Supabase — set via --dart-define on build, fallback to dev values
+  // flutter run --dart-define=SUPABASE_URL=xxx --dart-define=SUPABASE_ANON_KEY=yyy
+  static const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://kevdbsyiqelksxvmuped.supabase.co',
+  );
+  static const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtldmRic3lpcWVsa3N4dm11cGVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3MzUyMjIsImV4cCI6MjA5OTMxMTIyMn0.pNmc5HGE9huxmh4-eqveLETkxnxJ_j5rigeS8t35o2A',
+  );
 
   // Pricing (TZS)
-  static const priceHourly   = 15000;
-  static const priceHalfDay  = 25000;
-  static const priceFullDay  = 40000;
+  static const priceHourly  = 15000;
+  static const priceHalfDay = 25000;
+  static const priceFullDay = 40000;
 
   // Commission
   static const platformCommissionRate = 0.20;
   static const wingaPayoutRate        = 0.80;
   static const taxRateMin             = 0.03;
   static const taxRateMax             = 0.05;
+
+  // Verification fee tiers (TZS/month)
+  static const feeStarter  = 5000;
+  static const feeMid      = 15000;
+  static const feeVerified = 30000;
 
   // App
   static const appName      = 'Winga App';
@@ -26,7 +37,7 @@ class AppConstants {
   static const defaultLng  = 39.2083;
   static const defaultZoom = 14.0;
 
-  // Session keys
+  // Session
   static const sessionKey   = 'winga_session_uid';
   static const userTypeKey  = 'winga_user_type';
   static const onboardedKey = 'winga_onboarded';

@@ -20,7 +20,9 @@ class _LoginScreenState extends State<LoginScreen> {
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         setState(() => _isLoading = false);
-        context.push('/otp?phone=${_phoneCtrl.text}');
+        final raw = _phoneCtrl.text
+            .replaceAll(RegExp(r'^(\+?255|0)'), '');
+        context.push('/otp?phone=\$raw');
       }
     });
   }

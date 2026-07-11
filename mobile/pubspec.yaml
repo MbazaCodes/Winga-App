@@ -12,7 +12,6 @@ dependencies:
 
   # State Management
   flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.5
 
   # Navigation
   go_router: ^13.0.0
@@ -21,17 +20,15 @@ dependencies:
   supabase_flutter: ^2.6.0
 
   # Local Storage
-  hive_flutter: ^1.1.0
   shared_preferences: ^2.3.2
 
-  # UI & Design
+  # Security
+  crypto: ^3.0.3
+
+  # UI
   smooth_page_indicator: ^1.2.0+3
   flutter_animate: ^4.5.0
-  lottie: ^3.1.2
-  shimmer: ^3.0.0
   cached_network_image: ^3.3.0
-
-  # Forms & Input
   pin_code_fields: ^8.0.1
 
   # Utils
@@ -45,8 +42,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  riverpod_generator: ^2.4.3
-  build_runner: ^2.4.12
 
 flutter:
   uses-material-design: true

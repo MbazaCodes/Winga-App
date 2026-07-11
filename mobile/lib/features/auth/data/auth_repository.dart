@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:convert';
+import '../../../core/utils/crypto_utils.dart';
 import '../domain/user_model.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/session.dart';
@@ -41,7 +41,7 @@ class AuthRepository {
 
   /// Bypass auth — direct users table insert (dev only)
   Future<UserModel?> bypassLogin(String phone, String password) async {
-    final encoded = base64.encode(utf8.encode(password));
+    final encoded = CryptoUtils.hashPassword(password);
     final rows = await _client
         .from('user_credentials')
         .select('user_id')

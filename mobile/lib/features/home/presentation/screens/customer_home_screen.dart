@@ -15,6 +15,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final _searchCtrl = TextEditingController();
   int _notifCount = 3;
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   static const _categories = [
     ('📱', 'Elektroniki'),
     ('👕', 'Mavazi'),

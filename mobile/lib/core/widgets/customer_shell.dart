@@ -59,7 +59,7 @@ class CustomerShell extends StatelessWidget {
                   activeIcon: Icons.chat_bubble_rounded,
                   label: 'Ujumbe',
                   isActive: idx == 2,
-                  onTap: () => context.go('/earnings'),
+                  onTap: () => context.go('/requests'),
                 ),
                 _NavItem(
                   icon: Icons.person_outline_rounded,

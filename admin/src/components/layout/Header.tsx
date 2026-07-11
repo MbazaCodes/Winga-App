@@ -4,9 +4,10 @@ import { Bell, Search, ChevronDown, Menu } from 'lucide-react'
 interface HeaderProps {
   title: string
   subtitle?: string
+  notifCount?: number
 }
 
-export default function Header({ title, subtitle }: HeaderProps) {
+export default function Header({ title, subtitle, notifCount = 0 }: HeaderProps) {
   return (
     <header className="h-14 bg-white border-b border-gray-100 flex items-center px-6 gap-4 sticky top-0 z-20">
       {/* Page title (shown on mobile) */}
@@ -35,7 +36,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
       {/* Notification bell */}
       <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
         <Bell className="w-5 h-5 text-gray-600" />
-        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">5</span>
+        {notifCount > 0 && <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-primary text-white text-[9px] font-bold rounded-full flex items-center justify-center">{notifCount > 9 ? '9+' : notifCount}</span>}
       </button>
 
       {/* Admin profile */}
