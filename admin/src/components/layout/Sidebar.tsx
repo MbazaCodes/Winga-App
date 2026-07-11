@@ -26,7 +26,7 @@ const navItems = [
 ]
 
 const externalLinks = [
-  { label: 'Mobile App', href: '/mobile/', icon: Smartphone },
+  { label: 'Mobile App (PWA)', href: 'https://winga-pwa.vercel.app', icon: Smartphone },
 ]
 
 async function handleLogout() {

@@ -13,7 +13,7 @@ import { verifyWinga, assignBadge, rejectWinga } from '@/lib/queries'
 import {
   Search, Filter, Download, Eye, CheckCircle, XCircle,
   Users, UserCheck, Star, Clock, ChevronLeft, ChevronRight,
-  ChevronUp, ChevronDown, Shield, Award, AlertTriangle
+  ChevronUp, ChevronDown, Shield, Award, AlertTriangle, Zap, TrendingUp
 } from 'lucide-react'
 
 
@@ -84,7 +84,7 @@ function GateWarning({
   )
 }
 
-const TABS = ['All', 'Active', 'Inactive', 'Pending Verification', 'Suspended']
+const TABS = ['All', 'Active', 'Inactive', 'Suspended']
 
 const BADGE_CONFIG = {
   none:     { label: '—',           bg: 'bg-gray-100',  text: 'text-gray-400' },
@@ -390,13 +390,10 @@ export default function WingasPage() {
             className="p-1.5 rounded-lg hover:bg-amber-50 transition-colors" title="Assign badge">
             <Award className="w-[14px] h-[14px] text-amber-500" />
           </button>
-          {(row.original.status === 'Pending Verification' || !row.original.verified) && (
-            <>
-              <button onClick={() => setVerifyModal(row.original)}
-                className="px-2.5 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 text-[11px] font-semibold flex items-center gap-1 transition-colors">
-                <Shield className="w-3 h-3" /> Verify
-              </button>
-            </>
+          {row.original.verified && (
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary whitespace-nowrap flex items-center gap-0.5">
+              <Zap className="w-2.5 h-2.5" /> Auto
+            </span>
           )}
         </div>
       ),
@@ -433,11 +430,27 @@ export default function WingasPage() {
         />
       )}
 
+      {/* Auto-verification banner */}
+      <div className="bg-primary/5 border border-primary/15 rounded-xl px-4 py-3 mb-4 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Zap className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-primary">Auto-Verification Active</p>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            Badges are automatically assigned based on customer ratings.
+            Starter on registration · Mid at 10+ trips (score ≥ 0.60) · Verified at 30+ trips (score ≥ 0.80).
+            Admin can still override badges manually.
+          </p>
+        </div>
+        <TrendingUp className="w-5 h-5 text-primary/40" />
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Total Wingas" value={342} change={10.1} up icon={<Users className="w-5 h-5 text-primary" />} mini />
         <StatCard label="Active Verified" value={298} change={5.4} up icon={<UserCheck className="w-5 h-5 text-green-600" />} iconBg="bg-green-50" mini />
         <StatCard label="Avg Rating" value="4.8 ★" icon={<Star className="w-5 h-5 text-amber-500" />} iconBg="bg-amber-50" mini />
-        <StatCard label="Pending Review" value={7} icon={<Clock className="w-5 h-5 text-amber-500" />} iconBg="bg-amber-50" mini />
+        <StatCard label="Auto-Promoted" value={342} icon={<Zap className="w-5 h-5 text-primary" />} iconBg="bg-primary/10" mini />
       </div>
 
       {/* Badge summary strip */}
