@@ -908,6 +908,15 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ── Storage RLS Policies ──────────────────────────────────────────────────
 
+-- Drop existing storage policies (storage schema survives DROP SCHEMA public CASCADE)
+DROP POLICY IF EXISTS "avatars_public_read"    ON storage.objects;
+DROP POLICY IF EXISTS "avatars_owner_upload"   ON storage.objects;
+DROP POLICY IF EXISTS "avatars_owner_delete"   ON storage.objects;
+DROP POLICY IF EXISTS "documents_owner_read"   ON storage.objects;
+DROP POLICY IF EXISTS "documents_owner_upload" ON storage.objects;
+DROP POLICY IF EXISTS "app_assets_public_read" ON storage.objects;
+DROP POLICY IF EXISTS "app_assets_admin_write" ON storage.objects;
+
 -- Avatars: public read, owner write
 CREATE POLICY "avatars_public_read"
   ON storage.objects FOR SELECT
