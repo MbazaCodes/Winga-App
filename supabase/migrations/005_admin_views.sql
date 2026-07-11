@@ -1,3 +1,10 @@
+-- Drop views first (safe re-run)
+DROP VIEW IF EXISTS public.v_dashboard_stats CASCADE;
+DROP VIEW IF EXISTS public.v_pending_verifications CASCADE;
+DROP VIEW IF EXISTS public.v_earnings_summary CASCADE;
+DROP VIEW IF EXISTS public.v_winga_leaderboard CASCADE;
+DROP VIEW IF EXISTS public.v_recent_activity CASCADE;
+
 -- ============================================================
 -- Winga App — Migration 005: Admin Views & Helper Queries
 -- For use in Admin Panel (Next.js)
