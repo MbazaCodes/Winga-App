@@ -47,7 +47,7 @@ class _RequestConfirmScreenState extends State<RequestConfirmScreen> {
               children: const [
                 Icon(Icons.shield_outlined,
                     size: 14, color: WingaColors.primary),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
                   'Safe & Secure',
                   style: TextStyle(
@@ -244,7 +244,7 @@ class _RequestConfirmScreenState extends State<RequestConfirmScreen> {
                       children: const [
                         Icon(Icons.shield_outlined,
                             size: 16, color: WingaColors.gold),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           'You can extend time later if needed.',
                           style: TextStyle(
@@ -396,7 +396,7 @@ class _RequestConfirmScreenState extends State<RequestConfirmScreen> {
                           children: const [
                             Icon(Icons.shield_outlined,
                                 size: 12, color: WingaColors.primary),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
                               'No upfront payment. Pay after service.',
                               style: TextStyle(

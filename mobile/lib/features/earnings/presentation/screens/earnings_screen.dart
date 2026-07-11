@@ -87,7 +87,7 @@ class EarningsScreen extends StatelessWidget {
                                 color: Colors.white70,
                               ),
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Icon(Icons.info_outline_rounded,
                                 size: 14, color: Colors.white54),
                           ],

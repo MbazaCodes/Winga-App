@@ -169,7 +169,7 @@ class _ChooseServiceScreenState extends State<ChooseServiceScreen> {
                                     color: WingaColors.textPrimary,
                                   ),
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
                                   "Can't find what you're looking for?",
                                   style: TextStyle(

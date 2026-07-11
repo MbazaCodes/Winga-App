@@ -136,7 +136,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 borderRadius: BorderRadius.circular(12)),
               child: const Row(children: [
                 Icon(Icons.lock_outline_rounded, size: 16, color: WingaColors.primary),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(child: Text(
                   'Usalama wako ni muhimu. Kamwe usishirikishe code hii na mtu yeyote.',
                   style: TextStyle(fontFamily: 'Inter', fontSize: 12,

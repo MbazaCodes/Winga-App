@@ -42,7 +42,7 @@ class _FinalPaymentScreenState extends State<FinalPaymentScreen> {
             decoration: BoxDecoration(color: WingaColors.primarySurface, borderRadius: BorderRadius.circular(20)),
             child: const Row(children: [
               Icon(Icons.shield_outlined, size: 13, color: WingaColors.primary),
-              SizedBox(width: 4),
+              const SizedBox(width: 4),
               Text('Secure', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: WingaColors.primary)),
             ]),
           ),
@@ -87,9 +87,9 @@ class _FinalPaymentScreenState extends State<FinalPaymentScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: const [
                               Text('Service Completed!', style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w700, color: WingaColors.primary)),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text('Ahmed Juma helped you with Electronics Shopping', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: WingaColors.textSecondary)),
-                              SizedBox(height: 6),
+                              const SizedBox(height: 6),
                               RatingStars(rating: 4.9, count: 250, size: 13),
                             ],
                           ),
@@ -138,7 +138,7 @@ class _FinalPaymentScreenState extends State<FinalPaymentScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Icon(Icons.lock_rounded, size: 18, color: WingaColors.primary),
-                                  SizedBox(height: 3),
+                                  const SizedBox(height: 3),
                                   Text('Secure Payment', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: WingaColors.textSecondary)),
                                 ],
                               ),
@@ -243,7 +243,7 @@ class _FinalPaymentScreenState extends State<FinalPaymentScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
                       Icon(Icons.lock_rounded, size: 14, color: WingaColors.textLight),
-                      SizedBox(width: 5),
+                      const SizedBox(width: 5),
                       Text('256-bit encrypted & secure transaction', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: WingaColors.textLight)),
                     ],
                   ),

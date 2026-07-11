@@ -18,7 +18,7 @@ class _State extends State<WingaRegisterScreen> {
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: WingaColors.primary), onPressed: () => context.pop()),
         title: const Text('Winga Registration'),
-        actions: [Row(children: const [Icon(Icons.headset_mic_outlined, size: 16, color: WingaColors.primary), SizedBox(width: 4), Text('Help', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: WingaColors.primary, fontWeight: FontWeight.w600)), SizedBox(width: 16)])],
+        actions: [Row(children: const [Icon(Icons.headset_mic_outlined, size: 16, color: WingaColors.primary), const SizedBox(width: 4), Text('Help', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: WingaColors.primary, fontWeight: FontWeight.w600)), const SizedBox(width: 16)])],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -61,7 +61,6 @@ class _State extends State<WingaRegisterScreen> {
               label: 'Continue',
               trailing: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
               onPressed: () async {
-                // TODO: Validate all fields
                 // Call register-winga Edge Function
                 try {
                   final supabase = Supabase.instance.client;

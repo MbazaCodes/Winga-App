@@ -9,7 +9,7 @@ import AdminLayout from '@/components/layout/AdminLayout'
 import StatusBadge from '@/components/ui/StatusBadge'
 import StatCard from '@/components/ui/StatCard'
 import { wingas, formatTZS, type Winga } from '@/lib/data'
-import { verifyWinga, assignBadge } from '@/lib/queries'
+import { verifyWinga, assignBadge, rejectWinga } from '@/lib/queries'
 import {
   Search, Filter, Download, Eye, CheckCircle, XCircle,
   Users, UserCheck, Star, Clock, ChevronLeft, ChevronRight,
@@ -422,15 +422,15 @@ export default function WingasPage() {
         <VerifyModal
           winga={verifyModal}
           onClose={() => setVerifyModal(null)}
-          onVerify={(tier, notes, override) => verifyWinga(verifyModal.id, tier, notes, override).catch(console.error)}
-          onReject={(reason) => console.log('Reject', verifyModal.id, reason)}
+          onVerify={(tier, notes, override) => verifyWinga(verifyModal.id, tier, notes, override)}
+          onReject={(reason) => rejectWinga(verifyModal!.id, reason)}
         />
       )}
       {badgeModal && (
         <AssignBadgeModal
           winga={badgeModal}
           onClose={() => setBadgeModal(null)}
-          onAssign={(badge, override) => assignBadge(badgeModal.id, badge, override).catch(console.error)}
+          onAssign={(badge, override) => assignBadge(badgeModal.id, badge, override)}
         />
       )}
 

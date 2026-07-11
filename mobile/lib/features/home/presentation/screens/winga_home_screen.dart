@@ -297,7 +297,7 @@ class WingaHomeScreen extends StatelessWidget {
                                       fontFamily: 'Inter',
                                       fontSize: 12,
                                       color: Colors.white60)),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text('TZS 72,000',
                                   style: TextStyle(
                                     fontFamily: 'Inter',
@@ -305,7 +305,7 @@ class WingaHomeScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
                                   )),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
                                   Icon(Icons.arrow_upward_rounded,

@@ -313,7 +313,7 @@ class _HeroBanner extends StatelessWidget {
                             color: WingaColors.primary,
                           ),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Icon(Icons.arrow_forward_rounded,
                             size: 16, color: WingaColors.primary),
                       ],
@@ -337,7 +337,7 @@ class _HeroBanner extends StatelessWidget {
               child: Row(
                 children: const [
                   Icon(Icons.star_rounded, size: 16, color: WingaColors.gold),
-                  SizedBox(width: 4),
+                  const SizedBox(width: 4),
                   Text(
                     '4.8\nKutoka kwa wateja 2,340+',
                     style: TextStyle(

@@ -234,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               children: [
                                 Icon(Icons.edit_outlined,
                                     size: 14, color: Colors.white),
-                                SizedBox(width: 5),
+                                const SizedBox(width: 5),
                                 Text(
                                   'Edit Profile',
                                   style: TextStyle(
@@ -354,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   children: const [
                                     Icon(Icons.account_balance_wallet_outlined,
                                         size: 13, color: Colors.white38),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
                                       'View Earnings →',
                                       style: TextStyle(

@@ -30,7 +30,7 @@ class WingaOnTheWayScreen extends StatelessWidget {
               children: const [
                 Icon(Icons.headset_mic_outlined,
                     size: 14, color: WingaColors.primary),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text('Help',
                     style: TextStyle(
                       fontFamily: 'Inter',
@@ -97,7 +97,7 @@ class WingaOnTheWayScreen extends StatelessWidget {
                       children: const [
                         Icon(Icons.directions_car_outlined,
                             color: WingaColors.primary, size: 22),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +270,7 @@ class WingaOnTheWayScreen extends StatelessWidget {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Icon(Icons.verified_rounded,
                                       size: 16,
                                       color: WingaColors.primary),

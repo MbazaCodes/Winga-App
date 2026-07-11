@@ -66,7 +66,7 @@ class _RequestSentScreenState extends State<RequestSentScreen>
               children: const [
                 Icon(Icons.headset_mic_outlined,
                     size: 14, color: WingaColors.textSecondary),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text('Help',
                     style: TextStyle(
                       fontFamily: 'Inter',
@@ -391,7 +391,7 @@ class _RequestSentScreenState extends State<RequestSentScreen>
                         children: const [
                           Icon(Icons.share_outlined,
                               size: 14, color: Colors.white),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             'Share Trip',
                             style: TextStyle(
@@ -456,7 +456,7 @@ class _RequestSentScreenState extends State<RequestSentScreen>
                   children: const [
                     Icon(Icons.headset_mic_outlined,
                         size: 20, color: WingaColors.primary),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

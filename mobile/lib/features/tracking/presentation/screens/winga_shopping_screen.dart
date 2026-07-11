@@ -35,7 +35,7 @@ class WingaShoppingScreen extends StatelessWidget {
             child: const Row(
               children: [
                 Icon(Icons.headset_mic_outlined, size: 14, color: WingaColors.primary),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text('Help', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: WingaColors.primary)),
               ],
             ),
@@ -250,7 +250,7 @@ class WingaShoppingScreen extends StatelessWidget {
                       children: [
                         Row(children: const [
                           Text('Ahmed Juma', style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w700)),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Icon(Icons.verified_rounded, size: 15, color: WingaColors.primary),
                         ]),
                         const RatingStars(rating: 4.9, count: 250, size: 13),
