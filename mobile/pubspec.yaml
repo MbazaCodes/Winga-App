@@ -20,14 +20,6 @@ dependencies:
   # Backend
   supabase_flutter: ^2.6.0
 
-  # Maps & Location
-  google_maps_flutter: ^2.7.0
-  geolocator: ^11.0.0
-
-  # Notifications
-  firebase_core: ^2.27.0
-  firebase_messaging: ^14.7.0
-
   # Local Storage
   hive_flutter: ^1.1.0
   shared_preferences: ^2.3.2
@@ -45,7 +37,6 @@ dependencies:
   # Utils
   intl: ^0.19.0
   url_launcher: ^6.3.0
-  share_plus: ^10.0.0
   image_picker: ^1.1.2
 
   cupertino_icons: ^1.0.8
