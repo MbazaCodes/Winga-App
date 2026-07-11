@@ -9,7 +9,7 @@ import '../../../../core/widgets/winga_widgets.dart';
 class BookingPreferencesScreen extends ConsumerStatefulWidget {
   const BookingPreferencesScreen({super.key});
   @override
-  ConsumerConsumerState<BookingPreferencesScreen> createState() => _BookingPreferencesScreenState();
+  ConsumerState<BookingPreferencesScreen> createState() => _BookingPreferencesScreenState();
 }
 
 class _BookingPreferencesScreenState extends ConsumerState<BookingPreferencesScreen> {
