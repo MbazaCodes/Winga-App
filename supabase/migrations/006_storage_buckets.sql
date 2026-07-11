@@ -17,19 +17,23 @@ ON CONFLICT (id) DO NOTHING;
 -- ── Storage RLS Policies ──────────────────────────────────────────────────
 
 -- Avatars: public read, owner write
+DROP POLICY IF EXISTS "avatars_public_read" ON storage.objects;
 CREATE POLICY "avatars_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
 
+DROP POLICY IF EXISTS "avatars_owner_upload" ON storage.objects;
 CREATE POLICY "avatars_owner_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS "avatars_owner_delete" ON storage.objects;
 CREATE POLICY "avatars_owner_delete"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- Documents: private — only owner and admin
+DROP POLICY IF EXISTS "documents_owner_read" ON storage.objects;
 CREATE POLICY "documents_owner_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'documents' AND (
@@ -37,15 +41,18 @@ CREATE POLICY "documents_owner_read"
     OR public.is_admin()
   ));
 
+DROP POLICY IF EXISTS "documents_owner_upload" ON storage.objects;
 CREATE POLICY "documents_owner_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- App assets: public read, admin write
+DROP POLICY IF EXISTS "app_assets_public_read" ON storage.objects;
 CREATE POLICY "app_assets_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'app-assets');
 
+DROP POLICY IF EXISTS "app_assets_admin_write" ON storage.objects;
 CREATE POLICY "app_assets_admin_write"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'app-assets' AND public.is_admin());

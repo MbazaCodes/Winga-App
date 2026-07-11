@@ -107,6 +107,7 @@ ALTER TABLE public.messages REPLICA IDENTITY FULL;
 -- RLS
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "messages_participants" ON public.messages;
 CREATE POLICY "messages_participants" ON public.messages
   FOR ALL USING (
     request_id IN (
@@ -115,6 +116,7 @@ CREATE POLICY "messages_participants" ON public.messages
          OR winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
     )
   );
+DROP POLICY IF EXISTS "messages_admin" ON public.messages;
 CREATE POLICY "messages_admin" ON public.messages FOR ALL USING (public.is_admin());
 
 -- ════════════════════════════════════════════════════════════
@@ -151,10 +153,12 @@ GRANT SELECT ON public.v_winga_live_location TO authenticated;
 ALTER TABLE public.winga_locations REPLICA IDENTITY FULL;
 ALTER TABLE public.winga_locations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "wloc_winga_write" ON public.winga_locations;
 CREATE POLICY "wloc_winga_write" ON public.winga_locations
   FOR INSERT WITH CHECK (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "wloc_customer_read" ON public.winga_locations;
 CREATE POLICY "wloc_customer_read" ON public.winga_locations
   FOR SELECT USING (
     -- Customer can see location of Winga on their active request
@@ -182,6 +186,7 @@ CREATE TABLE IF NOT EXISTS public.preferred_wingas (
 CREATE INDEX IF NOT EXISTS idx_preferred_customer ON public.preferred_wingas(customer_id);
 
 ALTER TABLE public.preferred_wingas ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "preferred_own" ON public.preferred_wingas;
 CREATE POLICY "preferred_own" ON public.preferred_wingas
   FOR ALL USING (auth.uid() = customer_id);
 
@@ -234,6 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_subs_status  ON public.substitutions(status, crea
 ALTER TABLE public.substitutions REPLICA IDENTITY FULL;
 ALTER TABLE public.substitutions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "subs_participants" ON public.substitutions;
 CREATE POLICY "subs_participants" ON public.substitutions
   FOR ALL USING (
     request_id IN (
@@ -403,8 +409,10 @@ CREATE INDEX IF NOT EXISTS idx_disputes_status  ON public.disputes(status, creat
 CREATE INDEX IF NOT EXISTS idx_disputes_winga   ON public.disputes(winga_id);
 
 ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "disputes_own" ON public.disputes;
 CREATE POLICY "disputes_own" ON public.disputes
   FOR ALL USING (auth.uid() = raised_by OR public.is_admin());
+DROP POLICY IF EXISTS "disputes_winga_view" ON public.disputes;
 CREATE POLICY "disputes_winga_view" ON public.disputes
   FOR SELECT USING (winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()));
 
@@ -534,7 +542,9 @@ CREATE TABLE IF NOT EXISTS public.tips (
 CREATE INDEX IF NOT EXISTS idx_tips_winga ON public.tips(winga_id);
 
 ALTER TABLE public.tips ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tips_customer_own" ON public.tips;
 CREATE POLICY "tips_customer_own" ON public.tips FOR ALL USING (auth.uid() = customer_id);
+DROP POLICY IF EXISTS "tips_winga_view" ON public.tips;
 CREATE POLICY "tips_winga_view"   ON public.tips FOR SELECT USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
 );
@@ -583,12 +593,14 @@ CREATE INDEX IF NOT EXISTS idx_list_items_list ON public.shopping_list_items(lis
 ALTER TABLE public.shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shopping_list_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "list_participants" ON public.shopping_lists;
 CREATE POLICY "list_participants" ON public.shopping_lists
   FOR ALL USING (
     customer_id = auth.uid()
     OR request_id IN (SELECT id FROM public.requests WHERE
       winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()))
   );
+DROP POLICY IF EXISTS "list_items_via_list" ON public.shopping_list_items;
 CREATE POLICY "list_items_via_list" ON public.shopping_list_items
   FOR ALL USING (
     list_id IN (SELECT id FROM public.shopping_lists WHERE
@@ -620,6 +632,7 @@ CREATE INDEX IF NOT EXISTS idx_referrals_code     ON public.referrals(code);
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals(referrer_id);
 
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "referrals_own" ON public.referrals;
 CREATE POLICY "referrals_own" ON public.referrals
   FOR ALL USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
 
@@ -710,13 +723,17 @@ CREATE INDEX IF NOT EXISTS idx_blackout_date ON public.winga_blackout_dates(wing
 ALTER TABLE public.winga_availability    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.winga_blackout_dates  ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "avail_own" ON public.winga_availability;
 CREATE POLICY "avail_own"     ON public.winga_availability   FOR ALL USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()) OR public.is_admin()
 );
+DROP POLICY IF EXISTS "avail_public" ON public.winga_availability;
 CREATE POLICY "avail_public"  ON public.winga_availability   FOR SELECT USING (true);
+DROP POLICY IF EXISTS "blackout_own" ON public.winga_blackout_dates;
 CREATE POLICY "blackout_own"  ON public.winga_blackout_dates FOR ALL USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()) OR public.is_admin()
 );
+DROP POLICY IF EXISTS "blackout_pub" ON public.winga_blackout_dates;
 CREATE POLICY "blackout_pub"  ON public.winga_blackout_dates FOR SELECT USING (true);
 
 -- Is a Winga available right now?
