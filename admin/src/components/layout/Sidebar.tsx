@@ -71,7 +71,7 @@ export default function Sidebar() {
               {item.label === 'Notifications' && (
                 <span className="ml-auto bg-[#F9A825] text-[#1A5C2A] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0">5</span>
               )}
-              {item.label === 'Wingas (Shoppers)' && (
+              {item.label === 'Winga (Shoppers)' && (
                 <span className="ml-auto bg-blue-400/20 text-blue-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">1</span>
               )}
             </Link>

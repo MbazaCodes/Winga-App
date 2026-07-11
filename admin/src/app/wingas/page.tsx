@@ -18,10 +18,10 @@ import {
 const TABS = ['All', 'Active', 'Inactive', 'Pending Verification', 'Suspended']
 
 const BADGE_CONFIG = {
-  none:     { label: '—',        bg: 'bg-gray-100',   text: 'text-gray-400' },
-  Starter:  { label: '🥉 Starter',  bg: 'bg-orange-50',  text: 'text-orange-700' },
-  Mid:      { label: '🥈 Mid',      bg: 'bg-gray-100',   text: 'text-gray-600' },
-  Verified: { label: '🥇 Verified', bg: 'bg-amber-50',   text: 'text-amber-700' },
+  none:   { label: '—',             bg: 'bg-gray-100',   text: 'text-gray-400' },
+  Gold:   { label: '\u{1F947} Gold',   bg: 'bg-amber-50',   text: 'text-amber-700' },
+  Silver: { label: '\u{1F948} Silver', bg: 'bg-gray-100',   text: 'text-gray-600' },
+  Bronze: { label: '\u{1F949} Bronze', bg: 'bg-orange-50',  text: 'text-orange-700' },
 }
 
 // Assign Badge Modal
@@ -33,9 +33,9 @@ function AssignBadgeModal({ winga, onClose, onAssign }: {
   const [loading, setLoading] = useState(false)
 
   const tiers = [
-    { name: 'Starter', fee: 'TZS 5,000/mo', emoji: '🥉', color: 'border-orange-200 bg-orange-50', desc: 'Basic verified listing' },
-    { name: 'Mid',     fee: 'TZS 15,000/mo', emoji: '🥈', color: 'border-gray-300 bg-gray-50',   desc: 'Priority listing + analytics' },
-    { name: 'Verified',fee: 'TZS 30,000/mo', emoji: '🥇', color: 'border-amber-200 bg-amber-50', desc: 'Top placement + featured' },
+    { name: 'Gold',   fee: 'TZS 30,000/mo', emoji: '\u{1F947}', color: 'border-amber-200 bg-amber-50',   desc: 'Top placement + featured' },
+    { name: 'Silver', fee: 'TZS 15,000/mo', emoji: '\u{1F948}', color: 'border-gray-300 bg-gray-50',     desc: 'Priority listing + analytics' },
+    { name: 'Bronze', fee: 'TZS 5,000/mo',  emoji: '\u{1F949}', color: 'border-orange-200 bg-orange-50',  desc: 'Basic verified listing' },
   ]
 
   const handleAssign = async () => {
@@ -96,7 +96,7 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
   onVerify: (tier: string, notes: string) => void,
   onReject: (reason: string) => void,
 }) {
-  const [tier, setTier] = useState('Verified')
+  const [tier, setTier] = useState('Gold')
   const [notes, setNotes] = useState('')
   const [rejectMode, setRejectMode] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -140,12 +140,12 @@ function VerifyModal({ winga, onClose, onVerify, onReject }: {
               <div>
                 <label className="text-sm font-semibold text-gray-700 block mb-2">Assign Tier & Badge</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {['Starter','Mid','Verified'].map(t => (
+                  {['Bronze','Silver','Gold'].map(t => (
                     <button key={t} onClick={() => setTier(t)}
                       className={`py-2 rounded-lg text-xs font-semibold border transition-all ${
                         tier===t ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}>
-                      {t==='Starter'?'🥉':t==='Mid'?'🥈':'🥇'} {t}
+                      {t==='Bronze'?'🥉':t==='Silver'?'🥈':'🥇'} {t}
                     </button>
                   ))}
                 </div>
@@ -329,9 +329,9 @@ export default function WingasPage() {
       {/* Badge summary strip */}
       <div className="flex gap-3 mb-4">
         {[
-          { label: '🥇 Verified', count: 145, bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700' },
-          { label: '🥈 Mid', count: 98, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
-          { label: '🥉 Starter', count: 55, bg: 'bg-orange-50 border-orange-100', text: 'text-orange-700' },
+          { label: '🥇 Gold', count: 145, bg: 'bg-amber-50 border-amber-100', text: 'text-amber-700' },
+          { label: '🥈 Silver', count: 98, bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600' },
+          { label: '🥉 Bronze', count: 55, bg: 'bg-orange-50 border-orange-100', text: 'text-orange-700' },
           { label: 'No Badge', count: 44, bg: 'bg-red-50 border-red-100', text: 'text-red-500' },
         ].map(b => (
           <div key={b.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${b.bg}`}>

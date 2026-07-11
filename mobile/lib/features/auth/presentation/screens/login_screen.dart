@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
         final raw = _phoneCtrl.text
             .replaceAll(RegExp(r'^(\+?255|0)'), '');
-        context.push('/otp?phone=\$raw');
+        context.push('/otp?phone=$raw');
       }
     });
   }
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 12),
                   _SocialButton(
-                    icon: Icons.g_mobiledata_rounded,
+                    icon: Icons.g_mobiledata,
                     label: 'Endelea na Google',
                     isGoogle: true,
                     onTap: () {},

@@ -70,7 +70,7 @@ class _State extends State<WingaRegisterScreen> {
                   context.go('/winga-home');
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Registration failed: \$e')));
+                    SnackBar(content: Text('Registration failed: $e')));
                 }
               }),
           const SizedBox(height: 14),
