@@ -5,15 +5,20 @@ export async function POST(request: Request) {
   try {
     // ── 1. Validate env vars ──────────────────────────────────────
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !serviceKey) {
       console.error('[login] Missing env vars:', {
         hasUrl: !!supabaseUrl,
-        hasKey: !!serviceKey,
+        hasAnonKey: !!supabaseAnonKey,
+        hasServiceKey: !!serviceKey,
       })
       return NextResponse.json(
-        { error: 'Server configuration error — contact admin', debug: 'Missing Supabase environment variables on Vercel. Go to Vercel Dashboard → Settings → Environment Variables and add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.' },
+        {
+          error: 'Server configuration error',
+          debug: 'Missing Supabase env vars on Vercel. Set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY in Vercel Dashboard → Settings → Environment Variables.',
+        },
         { status: 500 }
       )
     }
@@ -26,69 +31,58 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
-    // ── 3. Init Supabase ──────────────────────────────────────────
-    const supabase = createClient(supabaseUrl, serviceKey, {
+    // ── 3. Authenticate via Supabase Auth ─────────────────────────
+    //    Uses the anon key client so Supabase handles password verification
+    const authClient = createClient(supabaseUrl, supabaseAnonKey)
+
+    const { data: authData, error: authError } = await authClient.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (authError || !authData.user) {
+      console.warn('[login] Supabase Auth rejected:', authError?.message)
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+    }
+
+    // ── 4. Verify user is an admin in our users table ─────────────
+    //    Uses service role to bypass RLS
+    const adminClient = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // ── 4. Look up admin user ─────────────────────────────────────
-    const { data: user, error: userErr } = await supabase
+    const { data: user, error: userErr } = await adminClient
       .from('users')
       .select('id, email, name, user_type')
-      .eq('email', email)
+      .eq('id', authData.user.id)
       .eq('user_type', 'admin')
       .single()
 
     if (userErr) {
-      console.error('[login] Supabase error fetching user:', userErr.message)
+      // PGRST116 = no row returned → user not in our table
+      if (userErr.code === 'PGRST116') {
+        console.warn('[login] Auth OK but no admin record for:', email)
+        return NextResponse.json(
+          { error: 'Access denied — your account is not an admin' },
+          { status: 403 }
+        )
+      }
+      console.error('[login] DB error checking admin role:', userErr.message)
       return NextResponse.json(
-        { error: 'Server error — check database setup', debug: userErr.message },
+        { error: 'Server error', debug: userErr.message },
         { status: 500 }
       )
     }
 
     if (!user) {
-      console.warn('[login] No admin user found for email:', email)
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-
-    // ── 5. Look up password hash ──────────────────────────────────
-    const { data: cred, error: credErr } = await supabase
-      .from('user_credentials')
-      .select('password_hash')
-      .eq('user_id', user.id)
-      .single()
-
-    if (credErr) {
-      console.error('[login] Supabase error fetching credentials:', credErr.message)
+      console.warn('[login] Auth OK but user_type is not admin:', email)
       return NextResponse.json(
-        { error: 'Server error — check database setup', debug: credErr.message },
-        { status: 500 }
+        { error: 'Access denied — admin only' },
+        { status: 403 }
       )
     }
 
-    if (!cred) {
-      console.warn('[login] No credentials found for user:', user.id)
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-
-    // ── 6. Verify SHA-256 password ────────────────────────────────
-    const encoder = new TextEncoder()
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password))
-    const hashHex = Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-    const hashBytes = new Uint8Array(hashBuffer)
-    let binary = ''
-    for (let i = 0; i < hashBytes.length; i++) binary += String.fromCharCode(hashBytes[i])
-    const hashBase64 = btoa(binary)
-
-    if (cred.password_hash !== hashHex && cred.password_hash !== hashBase64) {
-      console.warn('[login] Password hash mismatch for:', email)
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-
-    // ── 7. Create session token ───────────────────────────────────
+    // ── 5. Create session token ───────────────────────────────────
     const payload = JSON.stringify({
       uid: user.id,
       email: user.email,
@@ -112,7 +106,7 @@ export async function POST(request: Request) {
       path: '/',
     })
 
-    console.log('[login] Success for:', email)
+    console.log('[login] Admin login success:', email)
     return response
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)

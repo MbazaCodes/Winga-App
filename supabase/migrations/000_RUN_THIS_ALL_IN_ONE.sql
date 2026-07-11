@@ -715,8 +715,19 @@ GRANT EXECUTE ON FUNCTION public.expire_subscriptions()                   TO ser
 -- ============================================================
 -- Winga App — Migration 004: Seed Admin User
 -- ============================================================
+-- IMPORTANT: Login uses Supabase Auth (signInWithPassword).
+-- The admin user MUST exist in BOTH:
+--   1. Supabase Auth (Authentication → Users) — create the user there first
+--   2. public.users table (below) — with user_type = 'admin'
+--
+-- To set up:
+--   1. Go to Supabase Dashboard → Authentication → Users → Create User
+--   2. Enter email (e.g. admin@winga.co.tz) and a strong password
+--   3. Then run this migration to create the admin record in the users table
+--   4. If the Supabase Auth user ID is known, replace uuid_generate_v4() with it
+-- ============================================================
 
--- Insert default super admin (change password after first login)
+-- Insert admin record into users table
 INSERT INTO public.users (id, phone, email, name, user_type, is_verified)
 VALUES (
   uuid_generate_v4(),
@@ -726,16 +737,6 @@ VALUES (
   'admin',
   TRUE
 )
-ON CONFLICT (phone) DO NOTHING;
-
--- Seed admin credentials (password: Admin@Winga2026)
-INSERT INTO public.user_credentials (user_id, phone, password_hash)
-SELECT 
-  id,
-  '+255000000000',
-  encode(digest('Admin@Winga2026', 'sha256'), 'base64')
-FROM public.users 
-WHERE phone = '+255000000000'
 ON CONFLICT (phone) DO NOTHING;
 
 
