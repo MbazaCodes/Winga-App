@@ -85,7 +85,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             const Icon(Icons.location_on_rounded,
                                 color: WingaColors.primary, size: 20),
                             const SizedBox(width: 4),
-                            const Text(
+                            Text(
                               _currentCity,
                               style: TextStyle(
                                 fontFamily: 'Inter',
