@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
 
+const LOGO = '/winga-logo.png'
+
 export default function SplashScreen() {
   const nav = useNavigate()
 
@@ -59,17 +61,25 @@ export default function SplashScreen() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 16
     }}>
-      {/* Logo mark */}
+      {/* Logo image */}
       <div style={{
-        width: 100, height: 100, borderRadius: 50,
-        background: 'rgba(255,255,255,0.15)',
+        width: 110, height: 110, borderRadius: 24,
+        background: 'rgba(255,255,255,0.12)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative'
+        padding: 8,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
       }}>
-        <span style={{ fontSize: 52 }}>📍</span>
-        <span style={{
-          position: 'absolute', top: 18, fontSize: 24
-        }}>⭐</span>
+        <img
+          src={LOGO}
+          alt="Winga App"
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          onError={(e) => {
+            // Fallback to emoji if image fails
+            const target = e.target as HTMLImageElement
+            target.style.display = 'none'
+            target.parentElement!.innerHTML = '<span style="font-size:52px">📍</span>'
+          }}
+        />
       </div>
 
       {/* Wordmark */}

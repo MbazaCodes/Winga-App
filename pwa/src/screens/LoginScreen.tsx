@@ -193,7 +193,10 @@ export default function LoginScreen() {
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: C.white }}>
       {/* Header */}
       <div style={{ background: C.primary, padding: 'calc(env(safe-area-inset-top,0px) + 28px) 28px 28px', textAlign: 'center', flexShrink: 0 }}>
-        <div style={{ fontSize: 40, marginBottom: 4 }}>📍</div>
+        <div style={{ width: 90, height: 90, margin: '0 auto 8px', borderRadius: 20, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+          <img src="/winga-logo.png" alt="Winga" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none'; t.parentElement!.innerHTML = '<span style="font-size:40px">📍</span>'; }} />
+        </div>
         <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 800, color: C.white, letterSpacing: 3 }}>WINGA</div>
         <div style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: C.gold, letterSpacing: 5 }}>APP</div>
         <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>Mwongozo Wako wa Ununuzi Tanzania</div>

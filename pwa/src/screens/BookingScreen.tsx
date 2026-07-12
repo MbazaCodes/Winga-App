@@ -92,6 +92,7 @@ export default function BookingScreen() {
         service_type: selectedServiceType,
         delivery_method: selectedDelivery,
         estimated_price: price,
+        total_price: price,
         note: note.trim() || null,
         status: 'searching',
       })

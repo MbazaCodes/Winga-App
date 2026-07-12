@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
@@ -8,7 +8,9 @@ import { fmt } from '../lib/constants'
 
 interface Request {
   id: string; status: string; service_type: string; note: string | null
-  created_at: string; total_price: number; customer: { name: string; phone: string } | null
+  created_at: string; total_price: number; estimated_price: number
+  category: string; meeting_point: string; shopping_area: string; delivery_method: string
+  customer: { name: string; phone: string } | null
 }
 interface WingaProfile {
   id: string; name: string; badge: string; is_online: boolean
@@ -26,18 +28,15 @@ export default function WingaHomeScreen() {
   const nav = useNavigate()
   const [profile, setProfile] = useState<WingaProfile | null>(null)
   const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null)
-  const [requests, setRequests] = useState<Request[]>([])
+  const [availableReqs, setAvailableReqs] = useState<Request[]>([])
+  const [myReqs, setMyReqs] = useState<Request[]>([])
   const [todayEarnings, setTodayEarnings] = useState(0)
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
+  const [claiming, setClaiming] = useState<string | null>(null)
   const channelRef = useRef<any>(null)
 
-  useEffect(() => {
-    loadData()
-    return () => { channelRef.current?.unsubscribe() }
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const uid = Session.uid()
     if (!uid) return
     try {
@@ -50,65 +49,115 @@ export default function WingaHomeScreen() {
         const { data: status } = await supabase.rpc('get_winga_profile_status', { p_user_id: uid })
         if (status) {
           setProfileStatus(status as ProfileStatus)
-          // Update local profile_complete if it changed
           if (status.profile_complete !== w.profile_complete) {
             setProfile({ ...w, profile_complete: status.profile_complete })
           }
         }
-        // Load active + recent requests
-        const { data: reqs } = await supabase.from('requests')
-          .select('id,status,service_type,note,created_at,total_price,customer:customer_id(name,phone)')
+
+        // ── LOAD 1: Available searching requests (winga_id IS NULL) ──
+        // These are customer requests waiting for any winga to claim
+        if (w.is_online && w.profile_complete) {
+          const { data: searching } = await supabase.from('requests')
+            .select('id,status,service_type,note,created_at,total_price,estimated_price,category,meeting_point,shopping_area,delivery_method,customer:customer_id(name,phone)')
+            .is('winga_id', null)
+            .eq('status', 'searching')
+            .order('created_at', { ascending: false })
+            .limit(10)
+          if (searching) setAvailableReqs(searching as any)
+        } else {
+          setAvailableReqs([])
+        }
+
+        // ── LOAD 2: My accepted/active/recent requests ──
+        const { data: mine } = await supabase.from('requests')
+          .select('id,status,service_type,note,created_at,total_price,estimated_price,category,meeting_point,shopping_area,delivery_method,customer:customer_id(name,phone)')
           .eq('winga_id', w.id)
-          .in('status', ['searching', 'accepted', 'shopping', 'completed'])
+          .in('status', ['accepted', 'shopping', 'completed'])
           .order('created_at', { ascending: false })
           .limit(20)
-        if (reqs) {
-          setRequests(reqs as any)
+        if (mine) {
+          setMyReqs(mine as any)
           const today = new Date().toDateString()
-          const todayTotal = reqs
+          const todayTotal = mine
             .filter(r => r.status === 'completed' && new Date(r.created_at).toDateString() === today)
             .reduce((s, r) => s + (r.total_price || 0), 0)
           setTodayEarnings(todayTotal)
         }
-        // Realtime for new incoming requests
-        channelRef.current = supabase.channel(`winga-requests-${w.id}`)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests', filter: `winga_id=eq.${w.id}` },
-            () => loadData())
-          .subscribe()
+
+        // ── REALTIME: Listen for ALL new searching requests ──
+        if (!channelRef.current) {
+          channelRef.current = supabase.channel(`winga-available-${w.id}`)
+            .on('postgres_changes', {
+              event: 'INSERT', schema: 'public', table: 'requests',
+              filter: 'status=eq.searching',
+            }, () => loadData())
+            .subscribe()
+        }
       }
     } finally { setLoading(false) }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+    return () => { channelRef.current?.unsubscribe(); channelRef.current = null }
+  }, [loadData])
 
   const toggleOnline = async () => {
     if (!profile) return
-    // BLOCK if profile not complete
-    if (!profile.profile_complete) {
-      return
-    }
+    if (!profile.profile_complete) return
     setToggling(true)
     const next = !profile.is_online
     await supabase.from('wingas').update({ is_online: next }).eq('id', profile.id)
     setProfile(p => p ? { ...p, is_online: next } : p)
     setToggling(false)
+    // Reload to fetch/stop fetching available requests
+    if (next) loadData()
+    else setAvailableReqs([])
   }
 
-  const acceptRequest = async (reqId: string) => {
-    await supabase.from('requests').update({ status: 'accepted' }).eq('id', reqId)
-    setRequests(rs => rs.map(r => r.id === reqId ? { ...r, status: 'accepted' } : r))
+  // ── CLAIM: Atomic accept — only succeeds if winga_id is still NULL ──
+  const claimRequest = async (reqId: string) => {
+    if (!profile || claiming) return
+    setClaiming(reqId)
+    try {
+      // Atomic claim: only set winga_id if it's still NULL
+      const { data, error } = await supabase
+        .from('requests')
+        .update({ winga_id: profile.id, status: 'accepted', accepted_at: new Date().toISOString() })
+        .eq('id', reqId)
+        .is('winga_id', null)   // ← Race condition protection
+        .eq('status', 'searching')
+        .select('id')
+        .single()
+
+      if (error || !data) {
+        // Someone else claimed it — remove from list
+        setAvailableReqs(rs => rs.filter(r => r.id !== reqId))
+        return
+      }
+      // Claimed successfully — move to my requests
+      setAvailableReqs(rs => rs.filter(r => r.id !== reqId))
+      loadData() // Refresh my requests
+    } catch {
+      // Silently fail — will be refreshed on next loadData
+    } finally {
+      setClaiming(null)
+    }
   }
 
   const updateStatus = async (reqId: string, status: string) => {
     await supabase.from('requests').update({ status }).eq('id', reqId)
-    setRequests(rs => rs.map(r => r.id === reqId ? { ...r, status } : r))
+    setMyReqs(rs => rs.map(r => r.id === reqId ? { ...r, status } : r))
   }
 
-  const active = requests.filter(r => ['searching', 'accepted', 'shopping'].includes(r.status))
-  const recent = requests.filter(r => r.status === 'completed').slice(0, 5)
+  const myActive = myReqs.filter(r => ['accepted', 'shopping'].includes(r.status))
+  const recent = myReqs.filter(r => r.status === 'completed').slice(0, 5)
 
   if (loading) return <LoadingPage />
 
   const incomplete = profile && !profile.profile_complete
   const pct = profileStatus?.percent || 0
+  const svcLabel: Record<string, string> = { hourly: 'Saa 1', half_day: 'Nusu Siku', full_day: 'Siku Nzima' }
 
   return (
     <div className="page">
@@ -170,8 +219,6 @@ export default function WingaHomeScreen() {
               <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#5D4037', marginBottom: 10, lineHeight: 1.5 }}>
                 Lazima uwasilishe wasifu wako 100% kabla ya kupokea maombi ya wateja.
               </div>
-
-              {/* Progress bar */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#D32F2F', fontWeight: 600 }}>
                   Maendeleo: {pct}%
@@ -181,38 +228,25 @@ export default function WingaHomeScreen() {
                 </span>
               </div>
               <div style={{ height: 8, background: '#FFCDD2', borderRadius: 4, marginBottom: 12 }}>
-                <div style={{
-                  height: '100%', borderRadius: 4, width: `${pct}%`,
-                  background: pct >= 100 ? '#1A5C2A' : '#D32F2F',
-                  transition: 'width 0.5s',
-                }} />
+                <div style={{ height: '100%', borderRadius: 4, width: `${pct}%`, background: pct >= 100 ? '#1A5C2A' : '#D32F2F', transition: 'width 0.5s' }} />
               </div>
-
-              {/* Missing fields */}
               {profileStatus?.fields && (
                 <div style={{ marginBottom: 12 }}>
                   {profileStatus.fields.filter(f => !f.done).map(f => (
-                    <div key={f.field} style={{ fontFamily: 'Inter', fontSize: 11, color: '#C62828', padding: '2px 0' }}>
-                      ⬜ {f.field}
-                    </div>
+                    <div key={f.field} style={{ fontFamily: 'Inter', fontSize: 11, color: '#C62828', padding: '2px 0' }}>⬜ {f.field}</div>
                   ))}
                 </div>
               )}
-
               <button onClick={() => nav('/winga/profile')}
-                style={{
-                  width: '100%', height: 42, background: '#D32F2F', color: '#fff',
-                  border: 'none', borderRadius: 10, fontFamily: 'Inter',
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                }}>
+                style={{ width: '100%', height: 42, background: '#D32F2F', color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 📋 Maliza Wasifu Sasa
               </button>
             </div>
           </div>
         )}
 
-        {/* ═══ REMINDER: wasifu complete but NIDA missing ═══ */}
-        {profile?.profile_complete === false && profileStatus && profileStatus.percent >= 80 && profileStatus.percent < 100 && (
+        {/* ═══ NEAR-COMPLETE REMINDER ═══ */}
+        {profile?.profile_complete === false && profileStatus && profileStatus.percent >= 80 && profileStatus.percent < 100 && !incomplete && (
           <div style={{ margin: '12px 20px 0', background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
             <span style={{ fontSize: 20 }}>⚡</span>
             <div>
@@ -226,7 +260,7 @@ export default function WingaHomeScreen() {
           </div>
         )}
 
-        {/* Not online warning (only if profile IS complete) */}
+        {/* Not online warning */}
         {!profile?.is_online && !incomplete && (
           <div style={{ margin: '16px 20px 0', background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
             <span style={{ fontSize: 20 }}>⚠️</span>
@@ -237,16 +271,97 @@ export default function WingaHomeScreen() {
           </div>
         )}
 
-        {/* Active requests */}
-        {active.length > 0 && (
+        {/* ═══════════════════════════════════════════════════════════
+            AVAILABLE REQUESTS (from customers, winga_id = NULL)
+           ═══════════════════════════════════════════════════════════ */}
+        {availableReqs.length > 0 && (
           <div style={{ padding: '16px 20px 0' }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>🔴 Maombi Yanayoendelea</div>
-            {active.map(r => (
-              <RequestCard key={r.id} req={r}
-                onAccept={() => acceptRequest(r.id)}
-                onShopping={() => updateStatus(r.id, 'shopping')}
-                onComplete={() => updateStatus(r.id, 'completed')}
-              />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#D32F2F' }}>
+                🔔 Maombi Mapya ({availableReqs.length})
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>
+                Bonyeza "Kubali" kupata
+              </div>
+            </div>
+            {availableReqs.map(r => (
+              <div key={r.id} style={{
+                background: '#fff', border: '2px solid #D32F2F',
+                borderRadius: 16, padding: '14px 16px', marginBottom: 12,
+                animation: 'pulse-border 2s ease-in-out infinite',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700 }}>
+                      {(r.customer as any)?.name || 'Mteja'}
+                    </div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
+                      {r.category} · {svcLabel[r.service_type] || r.service_type}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 700, color: '#1A5C2A' }}>
+                      {fmt(r.total_price || r.estimated_price || 0)}
+                    </div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>
+                      {new Date(r.created_at).toLocaleTimeString('sw-TZ', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>
+                  <span>📍 {r.meeting_point}</span>
+                  <span>🛒 {r.shopping_area}</span>
+                </div>
+                {r.note && (
+                  <div style={{ background: '#F8F9FA', borderRadius: 10, padding: '8px 12px', fontFamily: 'Inter', fontSize: 12, color: '#374151', marginBottom: 10 }}>
+                    📝 {r.note}
+                  </div>
+                )}
+                <button
+                  onClick={() => claimRequest(r.id)}
+                  disabled={claiming !== null}
+                  style={{
+                    width: '100%', height: 42,
+                    background: claiming === r.id ? '#9CA3AF' : '#1A5C2A',
+                    color: '#fff', border: 'none', borderRadius: 10,
+                    fontFamily: 'Inter', fontSize: 14, fontWeight: 700,
+                    cursor: claiming ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}>
+                  {claiming === r.id ? '⏳ Inakubali...' : '✅ Kubali Maombi Hii'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ MY ACTIVE REQUESTS (accepted/shopping) ═══ */}
+        {myActive.length > 0 && (
+          <div style={{ padding: '16px 20px 0' }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+              🔵 Maombi Yanayoendelea ({myActive.length})
+            </div>
+            {myActive.map(r => (
+              <div key={r.id} style={{ background: '#fff', border: '2px solid #1A5C2A', borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700 }}>{(r.customer as any)?.name || 'Mteja'}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
+                      {r.category} · {svcLabel[r.service_type] || r.service_type} · {fmt(r.total_price || 0)}
+                    </div>
+                  </div>
+                  <StatusBadge status={r.status} />
+                </div>
+                {r.note && <div style={{ background: '#F8F9FA', borderRadius: 10, padding: '8px 12px', fontFamily: 'Inter', fontSize: 12, color: '#374151', marginBottom: 12 }}>📝 {r.note}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {r.status === 'accepted' && (
+                    <button onClick={() => updateStatus(r.id, 'shopping')} style={{ flex: 1, height: 40, background: '#1565C0', color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🛒 Ninaenda Kununua</button>
+                  )}
+                  {r.status === 'shopping' && (
+                    <button onClick={() => updateStatus(r.id, 'completed')} style={{ flex: 1, height: 40, background: C.primary, color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✅ Imekamilika</button>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -288,7 +403,7 @@ export default function WingaHomeScreen() {
             ))}
           </div>
         )}
-        {active.length === 0 && recent.length === 0 && (
+        {availableReqs.length === 0 && myActive.length === 0 && recent.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🛍️</div>
             <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Hakuna maombi bado</div>
@@ -302,44 +417,23 @@ export default function WingaHomeScreen() {
         <div style={{ height: 100 }} />
       </div>
       <BottomNav />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse-border{0%,100%{border-color:#D32F2F}50%{border-color:#FF8A65}}
+      `}</style>
     </div>
   )
 }
 
-function RequestCard({ req, onAccept, onShopping, onComplete }: { req: Request; onAccept: () => void; onShopping: () => void; onComplete: () => void }) {
-  const C = { primary: '#1A5C2A', border: '#E5E7EB', bg: '#F8F9FA' }
-  const svcLabel: Record<string, string> = { hourly: 'Saa 1', half_day: 'Nusu Siku', full_day: 'Siku Nzima' }
-  return (
-    <div style={{ background: '#fff', border: '2px solid #1A5C2A', borderRadius: 16, padding: '14px 16px', marginBottom: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <div>
-          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700 }}>{(req.customer as any)?.name || 'Mteja'}</div>
-          <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>{svcLabel[req.service_type] || req.service_type} · {fmt(req.total_price || 0)}</div>
-        </div>
-        <StatusBadge status={req.status} />
-      </div>
-      {req.note && <div style={{ background: '#F8F9FA', borderRadius: 10, padding: '8px 12px', fontFamily: 'Inter', fontSize: 12, color: '#374151', marginBottom: 12 }}>📝 {req.note}</div>}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {req.status === 'searching' && (
-          <button onClick={onAccept} style={{ flex: 1, height: 40, background: C.primary, color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✅ Kubali</button>
-        )}
-        {req.status === 'accepted' && (
-          <button onClick={onShopping} style={{ flex: 1, height: 40, background: '#1565C0', color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🛒 Ninaenda Kununua</button>
-        )}
-        {req.status === 'shopping' && (
-          <button onClick={onComplete} style={{ flex: 1, height: 40, background: C.primary, color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✅ Imekamilika</button>
-        )}
-      </div>
-    </div>
-  )
-}
+const C = { primary: '#1A5C2A' }
 
 function LoadingPage() {
   return (
     <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1A5C2A' }}>
       <div style={{ textAlign: 'center', color: '#fff' }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+        <div style={{ width: 80, height: 80, margin: '0 auto 16px', borderRadius: 18, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
+          <img src="/winga-logo.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
         <div style={{ fontFamily: 'Inter', fontSize: 14 }}>Inapakia dashboard...</div>
       </div>
     </div>
