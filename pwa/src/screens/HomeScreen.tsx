@@ -37,8 +37,11 @@ export default function HomeScreen() {
       try {
         const { data: user } = await supabase
           .from('users').select('name').eq('id', uid).maybeSingle()
-        if (mounted.current && user?.name && user.name !== 'Mteja Mpya')
-          setUserName(user.name.split(' ')[0])
+        if (mounted.current && user?.name) {
+          const n = user.name
+          // Show real name; if still default placeholder, show empty (will show generic greeting)
+          setUserName(n === 'Mteja Mpya' ? '' : n.split(' ')[0])
+        }
       } catch {}
     }
 
@@ -108,7 +111,7 @@ export default function HomeScreen() {
           {/* Greeting */}
           <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', marginBottom: 2 }}>{greeting} 👋</p>
           <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 20 }}>
-            {userName ? `Karibu, ${userName}!` : 'Karibu Winga App!'}
+            {userName ? `Karibu, ${userName}! 👋` : 'Karibu Winga App! 👋'}
           </h2>
 
           {/* Hero */}

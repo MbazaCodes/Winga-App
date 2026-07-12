@@ -13,6 +13,9 @@ export default function ProfileScreen() {
   const [requests, setRequests] = useState(0)
   const [completed, setCompleted] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
   const mounted = useRef(true)
 
   useEffect(() => {
@@ -53,6 +56,18 @@ export default function ProfileScreen() {
     if (mounted.current) setLoading(false)
   }
 
+  const handleSaveName = async () => {
+    if (!nameInput.trim() || nameInput.trim().length < 2) return
+    setSavingName(true)
+    try {
+      const uid = Session.uid()
+      if (uid) await supabase.from('users').update({ name: nameInput.trim() }).eq('id', uid)
+      setName(nameInput.trim())
+      setEditingName(false)
+    } catch {}
+    setSavingName(false)
+  }
+
   const handleLogout = async () => {
     try { await supabase.auth.signOut() } catch {}
     Session.clear()
@@ -81,7 +96,26 @@ export default function ProfileScreen() {
             <div>
               {loading
                 ? <div style={{ height: 20, width: 120, background: 'rgba(255,255,255,0.2)', borderRadius: 8 }} />
-                : <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{name}</div>}
+                : editingName
+                  ? (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input value={nameInput} onChange={e => setNameInput(e.target.value)} autoFocus
+                        onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                        style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: 8, padding: '6px 10px', color: C.white, outline: 'none', width: 160 }} />
+                      <button onClick={handleSaveName} disabled={savingName}
+                        style={{ background: C.gold, border: 'none', borderRadius: 8, padding: '6px 12px', fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer' }}>
+                        {savingName ? '...' : 'Hifadhi'}
+                      </button>
+                      <button onClick={() => { setEditingName(false); setNameInput(name) }}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+                    </div>
+                  )
+                  : (
+                    <div onClick={() => setEditingName(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                      <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{name}</div>
+                      <span style={{ fontSize: 14, opacity: 0.7 }}>✏️</span>
+                    </div>
+                  )}
               <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{phone}</div>
               <div style={{
                 marginTop: 8, display: 'inline-block',
