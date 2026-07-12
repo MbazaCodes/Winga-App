@@ -23,7 +23,8 @@ export default function WingaEarningsScreen() {
   useEffect(() => { loadData() }, [period])
 
   async function loadData() {
-    const uid = Session.uid()
+    const { data: { user: _authUser } } = await supabase.auth.getUser()
+    const uid = _authUser?.id || Session.uid()
     if (!uid) return
     setLoading(true)
     try {

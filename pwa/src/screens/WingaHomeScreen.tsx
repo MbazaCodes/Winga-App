@@ -42,7 +42,8 @@ export default function WingaHomeScreen() {
   const popupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadData = useCallback(async () => {
-    const uid = Session.uid()
+    const { data: { user: _authUser } } = await supabase.auth.getUser()
+    const uid = _authUser?.id || Session.uid()
     if (!uid) return
     try {
       const { data: w } = await supabase.from('wingas')
@@ -168,7 +169,7 @@ export default function WingaHomeScreen() {
         .is('winga_id', null)
         .eq('status', 'searching')
         .select('id')
-        .single()
+        .maybeSingle()
 
       if (error || !data) {
         setAvailableReqs(rs => rs.filter(r => r.id !== reqId))

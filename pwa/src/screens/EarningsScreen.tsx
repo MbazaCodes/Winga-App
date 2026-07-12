@@ -23,7 +23,8 @@ export default function EarningsScreen() {
   }, [period])
 
   async function load() {
-    const uid = Session.uid(); if (!uid) return
+    const { data: { user: _authUser } } = await supabase.auth.getUser()
+    const uid = _authUser?.id || Session.uid(); if (!uid) return
     setLoading(true)
     try {
       const { data: user } = await supabase.from('users').select('wallet_balance').eq('id', uid).maybeSingle()
