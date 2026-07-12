@@ -72,6 +72,6 @@ SELECT 'Migration 015 complete — Realtime ENABLED on requests + wingas tables 
 SELECT tablename FROM pg_tables WHERE schemaname = 'pg_catalog'
   AND tablename = 'pg_publication_tables'
   UNION ALL
-SELECT relname::text FROM pg_publication_tables
+SELECT tablename FROM pg_publication_tables
   WHERE pubname = 'supabase_realtime'
   AND schemaname = 'public';
