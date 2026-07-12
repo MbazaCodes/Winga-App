@@ -18,6 +18,7 @@ const WingaEarningsScreen = lazy(() => import('./screens/WingaEarningsScreen'))
 const WingaProfileScreen  = lazy(() => import('./screens/WingaProfileScreen'))
 const RegisterScreen      = lazy(() => import('./screens/RegisterScreen'))
 const WingaRegisterScreen = lazy(() => import('./screens/WingaRegisterScreen'))
+const MessagesScreen      = lazy(() => import('./screens/MessagesScreen'))
 
 // Auth guard
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -52,7 +53,8 @@ export default function App() {
           <Route path="/home"     element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
           <Route path="/book"     element={<PrivateRoute><BookingScreen /></PrivateRoute>} />
           <Route path="/requests" element={<PrivateRoute><RequestsScreen /></PrivateRoute>} />
-          <Route path="/earnings" element={<PrivateRoute><EarningsScreen /></PrivateRoute>} />
+          <Route path="/earnings"  element={<PrivateRoute><EarningsScreen /></PrivateRoute>} />
+          <Route path="/messages" element={<PrivateRoute><MessagesScreen /></PrivateRoute>} />
           <Route path="/profile"  element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
 
           {/* Winga partner routes */}
