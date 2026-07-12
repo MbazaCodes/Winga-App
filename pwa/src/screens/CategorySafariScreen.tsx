@@ -10,7 +10,7 @@ interface WingaCard {
   winga_score: number; rated_trips: number; total_trips: number
   is_online: boolean; current_city: string; current_area: string | null
   is_top_rated: boolean; winga_id: string; bio: string | null
-  profile_photo: string | null; profile_complete: boolean
+  profile_photo_url: string | null; profile_complete: boolean
 }
 
 export default function CategorySafariScreen() {
@@ -38,7 +38,7 @@ export default function CategorySafariScreen() {
     try {
       let query = supabase
         .from('wingas')
-        .select('id,name,specialty,badge,winga_score,rated_trips,total_trips,is_online,current_city,current_area,is_top_rated,winga_id,bio,profile_photo,profile_complete')
+        .select('id,name,specialty,badge,winga_score,rated_trips,total_trips,is_online,current_city,current_area,is_top_rated,winga_id,bio,profile_photo_url,profile_complete')
         .eq('status', 'active')
         .eq('profile_complete', true)
 
@@ -108,8 +108,8 @@ export default function CategorySafariScreen() {
           </div>
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 10 }}>
             <div style={{ position: 'relative', marginBottom: 12 }}>
-              {selectedWinga.profile_photo ? (
-                <img src={selectedWinga.profile_photo} alt={selectedWinga.name} style={{ width: 80, height: 80, borderRadius: 40, objectFit: 'cover', border: '3px solid rgba(255,255,255,0.3)' }} />
+              {selectedWinga.profile_photo_url ? (
+                <img src={selectedWinga.profile_photo_url} alt={selectedWinga.name} style={{ width: 80, height: 80, borderRadius: 40, objectFit: 'cover', border: '3px solid rgba(255,255,255,0.3)' }} />
               ) : (
                 <div style={{ width: 80, height: 80, borderRadius: 40, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38 }}>👤</div>
               )}
@@ -243,8 +243,8 @@ export default function CategorySafariScreen() {
                   animation: idx < 5 ? `slideUp 0.3s ease ${idx * 0.05}s both` : 'none',
                 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  {w.profile_photo ? (
-                    <img src={w.profile_photo} alt={w.name} style={{ width: 56, height: 56, borderRadius: 28, objectFit: 'cover' }} />
+                  {w.profile_photo_url ? (
+                    <img src={w.profile_photo_url} alt={w.name} style={{ width: 56, height: 56, borderRadius: 28, objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: 56, height: 56, borderRadius: 28, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
                   )}

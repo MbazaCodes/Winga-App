@@ -18,7 +18,7 @@ interface WingaRow {
   badge: string
   rating: number
   phone: string
-  profile_photo: string | null
+  profile_photo_url: string | null
   specialty: string
   current_area: string | null
   is_online: boolean
@@ -135,7 +135,7 @@ export default function RequestsScreen() {
         .from('requests')
         .select(
           `id, category, meeting_point, shopping_area, service_type, estimated_price, total_price, final_price, status, created_at, completed_at, accepted_at, note, delivery_method, winga_id,
-            winga:winga_id(id, name, winga_id, badge, rating, phone, profile_photo, specialty, current_area, is_online)`
+            winga:winga_id(id, name, winga_id, badge, rating, phone, profile_photo_url, specialty, current_area, is_online)`
         )
         .eq('customer_id', uid)
         .order('created_at', { ascending: false })
@@ -327,8 +327,8 @@ export default function RequestsScreen() {
           }}>
             {/* Avatar */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              {r.winga.profile_photo ? (
-                <img src={r.winga.profile_photo} alt={r.winga.name} style={{ width: 44, height: 44, borderRadius: 22, objectFit: 'cover' }} />
+              {r.winga.profile_photo_url ? (
+                <img src={r.winga.profile_photo_url} alt={r.winga.name} style={{ width: 44, height: 44, borderRadius: 22, objectFit: 'cover' }} />
               ) : (
                 <div style={{
                   width: 44, height: 44, borderRadius: 22, background: '#1A5C2A',
@@ -424,8 +424,8 @@ export default function RequestsScreen() {
               width: 32, height: 32, borderRadius: 16, background: '#E8F5E9',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
             }}>
-              {r.winga.profile_photo
-                ? <img src={r.winga.profile_photo} alt="" style={{ width: 32, height: 32, borderRadius: 16, objectFit: 'cover' }} />
+              {r.winga.profile_photo_url
+                ? <img src={r.winga.profile_photo_url} alt="" style={{ width: 32, height: 32, borderRadius: 16, objectFit: 'cover' }} />
                 : '👤'}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>

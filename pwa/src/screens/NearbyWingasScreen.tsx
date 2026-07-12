@@ -11,7 +11,7 @@ interface WingaCard {
   winga_score: number; rated_trips: number; total_trips: number
   is_online: boolean; current_city: string; current_area: string | null
   is_top_rated: boolean; winga_id: string; bio: string | null
-  profile_photo: string | null; profile_complete: boolean
+  profile_photo_url: string | null; profile_complete: boolean
 }
 
 export default function NearbyWingasScreen() {
@@ -72,7 +72,7 @@ export default function NearbyWingasScreen() {
     try {
       const { data } = await supabase
         .from('wingas')
-        .select('id,name,specialty,badge,winga_score,rated_trips,total_trips,is_online,current_city,current_area,is_top_rated,winga_id,bio,profile_photo,profile_complete')
+        .select('id,name,specialty,badge,winga_score,rated_trips,total_trips,is_online,current_city,current_area,is_top_rated,winga_id,bio,profile_photo_url,profile_complete')
         .eq('status', 'active')
         .eq('profile_complete', true)
         .order('is_online', { ascending: false })
@@ -310,8 +310,8 @@ export default function NearbyWingasScreen() {
                     )}
 
                     {/* Avatar */}
-                    {currentWinga.profile_photo ? (
-                      <img src={currentWinga.profile_photo} alt={currentWinga.name}
+                    {currentWinga.profile_photo_url ? (
+                      <img src={currentWinga.profile_photo_url} alt={currentWinga.name}
                         style={{ width: 90, height: 90, borderRadius: 45, objectFit: 'cover', border: '4px solid rgba(255,255,255,0.3)' }} />
                     ) : (
                       <div style={{
@@ -453,8 +453,8 @@ export default function NearbyWingasScreen() {
                   transition: 'transform 0.15s',
                 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  {w.profile_photo ? (
-                    <img src={w.profile_photo} alt={w.name}
+                  {w.profile_photo_url ? (
+                    <img src={w.profile_photo_url} alt={w.name}
                       style={{ width: 54, height: 54, borderRadius: 27, objectFit: 'cover' }} />
                   ) : (
                     <div style={{
@@ -526,8 +526,8 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
         {/* Profile section */}
         <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 10 }}>
           <div style={{ position: 'relative', marginBottom: 12 }}>
-            {winga.profile_photo ? (
-              <img src={winga.profile_photo} alt={winga.name}
+            {winga.profile_photo_url ? (
+              <img src={winga.profile_photo_url} alt={winga.name}
                 style={{ width: 88, height: 88, borderRadius: 44, objectFit: 'cover', border: '4px solid rgba(255,255,255,0.3)' }} />
             ) : (
               <div style={{
