@@ -204,6 +204,9 @@ export default function ProfileScreen() {
             🚪 Toka kwenye Akaunti
           </button>
         </div>
+        <div style={{ margin: '4px 20px', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>Winga App v1.2.0</p>
+        </div>
         <div style={{ height: 20 }} />
       </div>
 

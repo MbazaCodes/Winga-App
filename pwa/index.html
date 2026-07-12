@@ -61,6 +61,30 @@
     /* Smooth scrolling inside containers */
     .scroll { -webkit-overflow-scrolling: touch; overflow-y: auto; }
   </style>
+
+  <script>
+    // Force service worker to update and take control immediately
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        // If we have multiple registrations, clear old ones
+        if (registrations.length > 1) {
+          registrations.slice(0, -1).forEach(r => r.unregister());
+        }
+      });
+      // Force update check on every page load
+      navigator.serviceWorker.ready.then(function(reg) {
+        reg.update();
+      });
+      // When a new SW takes over, reload the page to get fresh content
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+  </script>
 </head>
 <body>
   <div id="root"></div>
