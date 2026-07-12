@@ -9,16 +9,18 @@ import OnboardingScreen from './screens/OnboardingScreen'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
 
-const BookingScreen     = lazy(() => import('./screens/BookingScreen'))
-const RequestsScreen    = lazy(() => import('./screens/RequestsScreen'))
-const EarningsScreen    = lazy(() => import('./screens/EarningsScreen'))
-const ProfileScreen     = lazy(() => import('./screens/ProfileScreen'))
-const WingaHomeScreen   = lazy(() => import('./screens/WingaHomeScreen'))
-const WingaEarningsScreen = lazy(() => import('./screens/WingaEarningsScreen'))
-const WingaProfileScreen  = lazy(() => import('./screens/WingaProfileScreen'))
-const RegisterScreen      = lazy(() => import('./screens/RegisterScreen'))
-const WingaRegisterScreen = lazy(() => import('./screens/WingaRegisterScreen'))
-const MessagesScreen      = lazy(() => import('./screens/MessagesScreen'))
+const BookingScreen         = lazy(() => import('./screens/BookingScreen'))
+const RequestsScreen        = lazy(() => import('./screens/RequestsScreen'))
+const EarningsScreen        = lazy(() => import('./screens/EarningsScreen'))
+const ProfileScreen         = lazy(() => import('./screens/ProfileScreen'))
+const WingaHomeScreen       = lazy(() => import('./screens/WingaHomeScreen'))
+const WingaEarningsScreen   = lazy(() => import('./screens/WingaEarningsScreen'))
+const WingaProfileScreen    = lazy(() => import('./screens/WingaProfileScreen'))
+const RegisterScreen        = lazy(() => import('./screens/RegisterScreen'))
+const WingaRegisterScreen   = lazy(() => import('./screens/WingaRegisterScreen'))
+const MessagesScreen        = lazy(() => import('./screens/MessagesScreen'))
+const NearbyWingasScreen    = lazy(() => import('./screens/NearbyWingasScreen'))
+const CategorySafariScreen  = lazy(() => import('./screens/CategorySafariScreen'))
 
 // Auth guard
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -50,12 +52,14 @@ export default function App() {
           <Route path="/login"      element={<LoginScreen />} />
 
           {/* Customer routes */}
-          <Route path="/home"     element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
-          <Route path="/book"     element={<PrivateRoute><BookingScreen /></PrivateRoute>} />
-          <Route path="/requests" element={<PrivateRoute><RequestsScreen /></PrivateRoute>} />
-          <Route path="/earnings"  element={<PrivateRoute><EarningsScreen /></PrivateRoute>} />
-          <Route path="/messages" element={<PrivateRoute><MessagesScreen /></PrivateRoute>} />
-          <Route path="/profile"  element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
+          <Route path="/home"       element={<PrivateRoute><HomeScreen /></PrivateRoute>} />
+          <Route path="/book"       element={<PrivateRoute><BookingScreen /></PrivateRoute>} />
+          <Route path="/requests"   element={<PrivateRoute><RequestsScreen /></PrivateRoute>} />
+          <Route path="/earnings"   element={<PrivateRoute><EarningsScreen /></PrivateRoute>} />
+          <Route path="/messages"   element={<PrivateRoute><MessagesScreen /></PrivateRoute>} />
+          <Route path="/profile"    element={<PrivateRoute><ProfileScreen /></PrivateRoute>} />
+          <Route path="/explore"    element={<PrivateRoute><NearbyWingasScreen /></PrivateRoute>} />
+          <Route path="/safari"     element={<PrivateRoute><CategorySafariScreen /></PrivateRoute>} />
 
           {/* Winga partner routes */}
           <Route path="/winga/home"     element={<WingaRoute><WingaHomeScreen /></WingaRoute>} />

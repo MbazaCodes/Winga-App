@@ -39,7 +39,6 @@ export default function HomeScreen() {
           .from('users').select('name').eq('id', uid).maybeSingle()
         if (mounted.current && user?.name) {
           const n = user.name
-          // Show real name; if still default placeholder, show empty (will show generic greeting)
           setUserName(n === 'Mteja Mpya' ? '' : n.split(' ')[0])
         }
       } catch {}
@@ -114,26 +113,48 @@ export default function HomeScreen() {
             {userName ? `Karibu, ${userName}! 👋` : 'Karibu Winga App! 👋'}
           </h2>
 
-          {/* Hero */}
-          <div onClick={() => nav('/book')} style={{
-            background: 'linear-gradient(135deg,#1A5C2A,#0F3D1A)',
-            borderRadius: 20, padding: '20px', marginBottom: 20, cursor: 'pointer',
-            position: 'relative', overflow: 'hidden',
-            WebkitTapHighlightColor: 'transparent',
-          }}>
-            <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: 50, background: 'rgba(255,255,255,0.05)' }} />
-            <h3 style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Pata Winga Wako</h3>
-            <p style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 16 }}>
-              Mwongozo wa kuaminika katika masoko ya Tanzania
-            </p>
-            <div style={{ background: '#F9A825', color: '#1A1A1A', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, fontFamily: 'Inter', fontSize: 14, fontWeight: 700 }}>
-              Omba Winga →
-            </div>
-            {onlineCount > 0 && (
-              <div style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: '6px 12px', fontSize: 12, color: '#fff', fontFamily: 'Inter' }}>
-                🟢 {onlineCount} mtandaoni
+          {/* Hero — two CTAs */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            {/* Book a Winga (Global request) */}
+            <div onClick={() => nav('/book')} style={{
+              background: 'linear-gradient(135deg,#1A5C2A,#0F3D1A)',
+              borderRadius: 20, padding: '18px 16px', cursor: 'pointer',
+              position: 'relative', overflow: 'hidden',
+              WebkitTapHighlightColor: 'transparent',
+            }}>
+              <div style={{ position: 'absolute', top: -15, right: -15, width: 70, height: 70, borderRadius: 50, background: 'rgba(255,255,255,0.05)' }} />
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🛒</div>
+              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Omba Winga</h3>
+              <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: 10 }}>
+                Tuma ombi kwa Winga zote waliopo
+              </p>
+              <div style={{ background: '#F9A825', color: '#1A1A1A', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter', fontSize: 12, fontWeight: 700 }}>
+                Omba →
               </div>
-            )}
+              {onlineCount > 0 && (
+                <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 8px', fontSize: 10, color: '#fff', fontFamily: 'Inter' }}>
+                  🟢 {onlineCount}
+                </div>
+              )}
+            </div>
+
+            {/* Discover Wingas (Badoo-style) */}
+            <div onClick={() => nav('/explore')} style={{
+              background: 'linear-gradient(135deg,#F9A825,#F57F17)',
+              borderRadius: 20, padding: '18px 16px', cursor: 'pointer',
+              position: 'relative', overflow: 'hidden',
+              WebkitTapHighlightColor: 'transparent',
+            }}>
+              <div style={{ position: 'absolute', top: -15, right: -15, width: 70, height: 70, borderRadius: 50, background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Gundua Wingas</h3>
+              <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4, marginBottom: 10 }}>
+                Tazama na teua Winga wako
+              </p>
+              <div style={{ background: '#fff', color: '#F57F17', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter', fontSize: 12, fontWeight: 700 }}>
+                Gundua →
+              </div>
+            </div>
           </div>
 
           {/* Search */}
@@ -150,13 +171,18 @@ export default function HomeScreen() {
             )}
           </div>
 
-          {/* Categories */}
+          {/* Categories — tap to go to Category Safari */}
           {!search && (
             <>
-              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Kategoria</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>Kategoria za Safari</h3>
+                <button onClick={() => nav('/safari?category=all')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  Tazama Zote →
+                </button>
+              </div>
               <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, marginBottom: 24, scrollbarWidth: 'none' }}>
                 {CATEGORIES.map(cat => (
-                  <div key={cat.id} onClick={() => nav(`/book?category=${cat.id}`)}
+                  <div key={cat.id} onClick={() => nav(`/safari?category=${cat.id}`)}
                     style={{ flexShrink: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '12px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 76, WebkitTapHighlightColor: 'transparent' }}>
                     <span style={{ fontSize: 26 }}>{cat.icon}</span>
                     <span style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 500, color: '#374151', textAlign: 'center', lineHeight: 1.3 }}>{cat.name}</span>
@@ -171,11 +197,13 @@ export default function HomeScreen() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>⭐ Wingas Bora</h3>
-                <span style={{ fontFamily: 'Inter', fontSize: 12, color: '#1A5C2A', fontWeight: 600 }}>Wanaopendekezwa</span>
+                <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  Gundua Zaidi →
+                </button>
               </div>
               <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, marginBottom: 24, scrollbarWidth: 'none' }}>
                 {topWingas.map(w => (
-                  <div key={w.id} onClick={() => nav(`/book?winga=${w.id}`)}
+                  <div key={w.id} onClick={() => nav(`/explore?winga=${w.id}`)}
                     style={{ flexShrink: 0, width: 140, background: '#fff', border: '1.5px solid rgba(249,168,37,0.35)', borderRadius: 16, padding: 12, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', WebkitTapHighlightColor: 'transparent' }}>
                     <div style={{ width: 48, height: 48, borderRadius: 24, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 8 }}>👤</div>
                     <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{w.name.split(' ')[0]}</div>
@@ -212,12 +240,12 @@ export default function HomeScreen() {
               </p>
               {search
                 ? <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Tazama wote →</button>
-                : <button onClick={() => nav('/book')} style={{ background: '#1A5C2A', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 24px', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Omba Winga</button>
+                : <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Gundua Wingas Zote →</button>
               }
             </div>
           ) : (
             filtered.map(w => (
-              <div key={w.id} onClick={() => nav(`/book?winga=${w.id}`)}
+              <div key={w.id} onClick={() => nav(`/explore?winga=${w.id}`)}
                 style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, cursor: 'pointer', display: 'flex', gap: 14, border: '1px solid #F3F4F6', boxShadow: '0 2px 6px rgba(0,0,0,0.04)', WebkitTapHighlightColor: 'transparent' }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <div style={{ width: 52, height: 52, borderRadius: 26, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>👤</div>

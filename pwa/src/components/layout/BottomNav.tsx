@@ -3,7 +3,7 @@ import { Session } from '../../lib/session'
 
 const customerTabs = [
   { path: '/home',     icon: '🏠', label: 'Nyumbani' },
-  { path: '/requests', icon: '📋', label: 'Safari' },
+  { path: '/explore',  icon: '🔍', label: 'Gundua' },
   { path: '/book',     icon: null, label: 'Omba' },
   { path: '/messages', icon: '💬', label: 'Ujumbe' },
   { path: '/profile',  icon: '👤', label: 'Wasifu' },
@@ -31,7 +31,7 @@ export default function BottomNav() {
       boxShadow: '0 -2px 12px rgba(0,0,0,0.06)', zIndex: 100,
     }}>
       {tabs.map(tab => {
-        const active = pathname === tab.path || (tab.path !== '/home' && tab.path !== '/winga/home' && pathname.startsWith(tab.path))
+        const active = pathname === tab.path || (tab.path !== '/home' && tab.path !== '/winga/home' && tab.path !== '/explore' && pathname.startsWith(tab.path))
         // Centre FAB button
         if (!tab.icon) return (
           <button key={tab.path} onClick={() => nav('/book')}

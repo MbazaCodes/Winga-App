@@ -36,6 +36,11 @@ export default function WingaHomeScreen() {
   const [claiming, setClaiming] = useState<string | null>(null)
   const channelRef = useRef<any>(null)
 
+  // ═══ POPUP NOTIFICATION STATE ═══
+  const [popupRequest, setPopupRequest] = useState<Request | null>(null)
+  const [popupVisible, setPopupVisible] = useState(false)
+  const popupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const loadData = useCallback(async () => {
     const uid = Session.uid()
     if (!uid) return
@@ -54,8 +59,7 @@ export default function WingaHomeScreen() {
           }
         }
 
-        // ── LOAD 1: Available searching requests (winga_id IS NULL) ──
-        // These are customer requests waiting for any winga to claim
+        // ── LOAD: Available searching requests (global room — winga_id IS NULL) ──
         if (w.is_online && w.profile_complete) {
           const { data: searching } = await supabase.from('requests')
             .select('id,status,service_type,note,created_at,total_price,estimated_price,category,meeting_point,shopping_area,delivery_method,customer:customer_id(name,phone)')
@@ -63,12 +67,20 @@ export default function WingaHomeScreen() {
             .eq('status', 'searching')
             .order('created_at', { ascending: false })
             .limit(10)
-          if (searching) setAvailableReqs(searching as any)
+          if (searching) {
+            const prevIds = new Set(availableReqs.map(r => r.id))
+            const newReqs = (searching as any[]).filter(r => !prevIds.has(r.id))
+            // Show popup for the first new request
+            if (newReqs.length > 0 && !popupVisible) {
+              showNewRequestPopup(newReqs[0])
+            }
+            setAvailableReqs(searching as any)
+          }
         } else {
           setAvailableReqs([])
         }
 
-        // ── LOAD 2: My accepted/active/recent requests ──
+        // ── LOAD: My accepted/active/recent requests ──
         const { data: mine } = await supabase.from('requests')
           .select('id,status,service_type,note,created_at,total_price,estimated_price,category,meeting_point,shopping_area,delivery_method,customer:customer_id(name,phone)')
           .eq('winga_id', w.id)
@@ -84,22 +96,52 @@ export default function WingaHomeScreen() {
           setTodayEarnings(todayTotal)
         }
 
-        // ── REALTIME: Listen for ALL new searching requests ──
+        // ── REALTIME: Listen for ALL new searching requests (GLOBAL ROOM) ──
         if (!channelRef.current) {
-          channelRef.current = supabase.channel(`winga-available-${w.id}`)
+          channelRef.current = supabase.channel(`winga-global-room`)
             .on('postgres_changes', {
               event: 'INSERT', schema: 'public', table: 'requests',
               filter: 'status=eq.searching',
-            }, () => loadData())
+            }, (payload: any) => {
+              const newReq = payload.new as Request
+              // Vibrate for new request
+              if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+              // Show popup
+              showNewRequestPopup(newReq)
+              // Refresh list
+              loadData()
+            })
             .subscribe()
         }
       }
     } finally { setLoading(false) }
   }, [])
 
+  // Show popup notification for new request
+  const showNewRequestPopup = useCallback((req: Request) => {
+    setPopupRequest(req)
+    setPopupVisible(true)
+    // Auto-dismiss after 8 seconds
+    if (popupTimer.current) clearTimeout(popupTimer.current)
+    popupTimer.current = setTimeout(() => {
+      setPopupVisible(false)
+      setTimeout(() => setPopupRequest(null), 300)
+    }, 8000)
+  }, [])
+
+  const dismissPopup = () => {
+    if (popupTimer.current) clearTimeout(popupTimer.current)
+    setPopupVisible(false)
+    setTimeout(() => setPopupRequest(null), 300)
+  }
+
   useEffect(() => {
     loadData()
-    return () => { channelRef.current?.unsubscribe(); channelRef.current = null }
+    return () => {
+      channelRef.current?.unsubscribe()
+      channelRef.current = null
+      if (popupTimer.current) clearTimeout(popupTimer.current)
+    }
   }, [loadData])
 
   const toggleOnline = async () => {
@@ -110,7 +152,6 @@ export default function WingaHomeScreen() {
     await supabase.from('wingas').update({ is_online: next }).eq('id', profile.id)
     setProfile(p => p ? { ...p, is_online: next } : p)
     setToggling(false)
-    // Reload to fetch/stop fetching available requests
     if (next) loadData()
     else setAvailableReqs([])
   }
@@ -120,26 +161,23 @@ export default function WingaHomeScreen() {
     if (!profile || claiming) return
     setClaiming(reqId)
     try {
-      // Atomic claim: only set winga_id if it's still NULL
       const { data, error } = await supabase
         .from('requests')
         .update({ winga_id: profile.id, status: 'accepted', accepted_at: new Date().toISOString() })
         .eq('id', reqId)
-        .is('winga_id', null)   // ← Race condition protection
+        .is('winga_id', null)
         .eq('status', 'searching')
         .select('id')
         .single()
 
       if (error || !data) {
-        // Someone else claimed it — remove from list
         setAvailableReqs(rs => rs.filter(r => r.id !== reqId))
         return
       }
-      // Claimed successfully — move to my requests
       setAvailableReqs(rs => rs.filter(r => r.id !== reqId))
-      loadData() // Refresh my requests
+      dismissPopup()
+      loadData()
     } catch {
-      // Silently fail — will be refreshed on next loadData
     } finally {
       setClaiming(null)
     }
@@ -161,6 +199,131 @@ export default function WingaHomeScreen() {
 
   return (
     <div className="page">
+      {/* ═══════════════════════════════════════════════════════════
+          NEW REQUEST POPUP NOTIFICATION
+         ═══════════════════════════════════════════════════════════ */}
+      {popupRequest && (
+        <div
+          onClick={() => { dismissPopup(); if (availableReqs.length > 0) window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.4)', zIndex: 200,
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+            padding: '16px',
+            opacity: popupVisible ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+            pointerEvents: popupVisible ? 'auto' : 'none',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 380,
+              background: '#fff', borderRadius: 24,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              transform: popupVisible ? 'translateY(0) scale(1)' : 'translateY(-30px) scale(0.95)',
+              transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+          >
+            {/* Animated header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #D32F2F, #B71C1C)',
+              padding: '20px 20px 16px', position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Pulse ring animation */}
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: 120, height: 120, borderRadius: 60,
+                border: '3px solid rgba(255,255,255,0.15)',
+                transform: 'translate(-50%, -50%)',
+                animation: 'popup-ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
+              }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 26,
+                  background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28, animation: 'popup-bounce 0.6s ease',
+                }}>🔔</div>
+                <div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 800, color: '#fff' }}>
+                    Ombi Jipya!
+                  </div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                    Mteja anahitaji Winga — haraka!
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Request details */}
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 700, color: '#1A1A1A' }}>
+                    {(popupRequest.customer as any)?.name || 'Mteja'}
+                  </div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                    {popupRequest.category} · {svcLabel[popupRequest.service_type] || popupRequest.service_type}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 800, color: '#1A5C2A' }}>
+                    {fmt(popupRequest.total_price || popupRequest.estimated_price || 0)}
+                  </div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>
+                    {new Date(popupRequest.created_at).toLocaleTimeString('sw-TZ', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12, fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
+                <span>📍 {popupRequest.meeting_point}</span>
+                <span>🛒 {popupRequest.shopping_area}</span>
+              </div>
+
+              {popupRequest.note && (
+                <div style={{ background: '#F8F9FA', borderRadius: 10, padding: '8px 12px', fontFamily: 'Inter', fontSize: 12, color: '#374151', marginBottom: 12 }}>
+                  📝 {popupRequest.note}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={dismissPopup}
+                  style={{ flex: 1, height: 48, background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 12, fontFamily: 'Inter', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  Ruka
+                </button>
+                <button
+                  onClick={() => claimRequest(popupRequest.id)}
+                  disabled={claiming !== null}
+                  style={{
+                    flex: 2, height: 48,
+                    background: claiming ? '#9CA3AF' : '#1A5C2A',
+                    color: '#fff', border: 'none', borderRadius: 12,
+                    fontFamily: 'Inter', fontSize: 15, fontWeight: 700,
+                    cursor: claiming ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    boxShadow: '0 4px 12px rgba(26,92,42,0.3)',
+                  }}>
+                  {claiming === popupRequest.id ? '⏳ Inakubali...' : '✅ Kubali Haraka!'}
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-dismiss indicator */}
+            <div style={{ padding: '0 20px 12px', textAlign: 'center' }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#D32F2F', fontWeight: 500, animation: 'blink 1s infinite' }}>
+                ⚡ Winga wengine wanaweza kukubali — weka haraka!
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ background: profile?.is_online ? '#1A5C2A' : '#374151', paddingTop: 'env(safe-area-inset-top,0px)', paddingBottom: 0, transition: 'background 0.3s' }}>
         <div style={{ padding: '16px 20px 20px' }}>
@@ -266,22 +429,28 @@ export default function WingaHomeScreen() {
             <span style={{ fontSize: 20 }}>⚠️</span>
             <div>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: '#F57F17' }}>Uko nje ya mtandao</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>Washa "Mtandaoni" ili kupokea maombi</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>Washa "Mtandaoni" ili kupokea maombi kutoka Global Room</div>
             </div>
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════════════
-            AVAILABLE REQUESTS (from customers, winga_id = NULL)
+            GLOBAL REQUEST ROOM — All searching requests (winga_id = NULL)
            ═══════════════════════════════════════════════════════════ */}
         {availableReqs.length > 0 && (
           <div style={{ padding: '16px 20px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#D32F2F' }}>
-                🔔 Maombi Mapya ({availableReqs.length})
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: 5, background: '#D32F2F',
+                  animation: 'pulse-dot 1.5s ease-in-out infinite',
+                }} />
+                <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#D32F2F' }}>
+                  Maombi Mapya ({availableReqs.length})
+                </div>
               </div>
               <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>
-                Bonyeza "Kubali" kupata
+                🌍 Global Room — Kubali haraka!
               </div>
             </div>
             {availableReqs.map(r => (
@@ -358,7 +527,7 @@ export default function WingaHomeScreen() {
                     <button onClick={() => updateStatus(r.id, 'shopping')} style={{ flex: 1, height: 40, background: '#1565C0', color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🛒 Ninaenda Kununua</button>
                   )}
                   {r.status === 'shopping' && (
-                    <button onClick={() => updateStatus(r.id, 'completed')} style={{ flex: 1, height: 40, background: C.primary, color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✅ Imekamilika</button>
+                    <button onClick={() => updateStatus(r.id, 'completed')} style={{ flex: 1, height: 40, background: '#1A5C2A', color: '#fff', border: 'none', borderRadius: 10, fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✅ Imekamilika</button>
                   )}
                 </div>
               </div>
@@ -410,7 +579,7 @@ export default function WingaHomeScreen() {
             <div style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280' }}>
               {incomplete
                 ? 'Maliza wasifu wako 100% kwanza, kisha washa "Mtandaoni" na subiri wateja!'
-                : 'Washa "Mtandaoni" na subiri wateja watakapokuja!'}
+                : 'Washa "Mtandaoni" na subiri wateja watakapokuja! Ombi litafika Global Room.'}
             </div>
           </div>
         )}
@@ -420,12 +589,14 @@ export default function WingaHomeScreen() {
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse-border{0%,100%{border-color:#D32F2F}50%{border-color:#FF8A65}}
+        @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+        @keyframes popup-ping{75%,100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
+        @keyframes popup-bounce{0%{transform:scale(0.3)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
       `}</style>
     </div>
   )
 }
-
-const C = { primary: '#1A5C2A' }
 
 function LoadingPage() {
   return (
