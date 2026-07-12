@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
@@ -14,14 +14,20 @@ export default function EarningsScreen() {
   const [trips, setTrips] = useState<any[]>([])
   const [wallet, setWallet] = useState(0)
   const [loading, setLoading] = useState(true)
+  const mounted = useRef(true)
 
-  useEffect(() => { load() }, [period])
+  useEffect(() => {
+    mounted.current = true
+    load()
+    return () => { mounted.current = false }
+  }, [period])
 
   async function load() {
     const uid = Session.uid(); if (!uid) return
     setLoading(true)
     try {
       const { data: user } = await supabase.from('users').select('wallet_balance').eq('id', uid).maybeSingle()
+      if (!mounted.current) return
       setWallet(user?.wallet_balance || 0)
 
       const now = new Date()
@@ -38,9 +44,10 @@ export default function EarningsScreen() {
 
       const { data } = await q
       const rows = data || []
+      if (!mounted.current) return
       setTrips(rows as any)
       setSpent(rows.reduce((s: number, r: any) => s + (r.total_price || 0), 0))
-    } finally { setLoading(false) }
+    } finally { if (mounted.current) setLoading(false) }
   }
 
   const svcLabel: Record<string, string> = { hourly: 'Saa 1', half_day: 'Nusu Siku', full_day: 'Siku Nzima' }

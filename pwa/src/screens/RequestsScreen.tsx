@@ -95,6 +95,7 @@ export default function RequestsScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [requests, setRequests] = useState<RequestRow[]>([])
   const [loading, setLoading] = useState(true)
+  const mounted = useRef(true)
   const [error, setError] = useState<string | null>(null)
 
   /* rating modal */
@@ -138,6 +139,8 @@ export default function RequestsScreen() {
   }, [])
 
   useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
     fetchRequests()
   }, [fetchRequests])
 

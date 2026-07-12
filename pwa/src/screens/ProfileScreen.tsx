@@ -1,58 +1,94 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
 import BottomNav from '../components/layout/BottomNav'
+import { fmt } from '../lib/constants'
 
 export default function ProfileScreen() {
   const nav = useNavigate()
-  const [user, setUser] = useState<{ name: string; phone: string; email?: string } | null>(null)
-  const [stats, setStats] = useState({ requests: 0, completed: 0, wallet: 0 })
+  const [name, setName]       = useState('Mteja')
+  const [phone, setPhone]     = useState('')
+  const [wallet, setWallet]   = useState(0)
+  const [requests, setRequests] = useState(0)
+  const [completed, setCompleted] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const mounted = useRef(true)
 
   useEffect(() => {
-    const uid = Session.uid()
-    if (!uid) return
-    supabase.from('users')
-      .select('name, phone, email, wallet_balance')
-      .eq('id', uid)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setUser({ name: data.name || 'Mteja', phone: data.phone || '', email: data.email })
-          setStats(s => ({ ...s, wallet: data.wallet_balance || 0 }))
-        }
-      })
-    supabase.from('requests')
-      .select('id, status')
-      .eq('customer_id', uid)
-      .then(({ data }) => {
-        if (data) setStats(s => ({
-          ...s,
-          requests: data.length,
-          completed: data.filter(r => r.status === 'completed').length,
-        }))
-      })
+    mounted.current = true
+    loadData()
+    return () => { mounted.current = false }
   }, [])
 
+  async function loadData() {
+    const uid = Session.uid()
+    if (!uid) { setLoading(false); return }
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('name, phone, wallet_balance')
+        .eq('id', uid)
+        .maybeSingle()
+      if (!mounted.current) return
+      if (user) {
+        setName(user.name || 'Mteja')
+        setPhone(user.phone || '')
+        setWallet(user.wallet_balance || 0)
+      }
+    } catch {}
+
+    try {
+      const { data: reqs } = await supabase
+        .from('requests')
+        .select('id, status')
+        .eq('customer_id', uid)
+      if (!mounted.current) return
+      if (reqs) {
+        setRequests(reqs.length)
+        setCompleted(reqs.filter(r => r.status === 'completed').length)
+      }
+    } catch {}
+
+    if (mounted.current) setLoading(false)
+  }
+
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    try { await supabase.auth.signOut() } catch {}
     Session.clear()
     nav('/login', { replace: true })
   }
 
-  const C = { primary: '#1A5C2A', gold: '#F9A825', white: '#fff', bg: '#F8F9FA', textSec: '#6B7280', border: '#E5E7EB' }
+  const C = {
+    primary: '#1A5C2A', gold: '#F9A825', white: '#fff',
+    bg: '#F8F9FA', textSec: '#6B7280', border: '#E5E7EB',
+  }
 
   return (
     <div className="page">
-      <div style={{ background: C.primary, paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 0 }}>
-        <div style={{ padding: '20px 20px 0' }}>
-          <h1 style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white, marginBottom: 20 }}>Wasifu Wangu</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 24 }}>
-            <div style={{ width: 72, height: 72, borderRadius: 36, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>👤</div>
+      {/* Green header */}
+      <div style={{ background: C.primary, paddingTop: 'env(safe-area-inset-top,0px)', flexShrink: 0 }}>
+        <div style={{ padding: '20px 20px 28px' }}>
+          <h1 style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white, marginBottom: 20 }}>
+            Wasifu Wangu
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 36,
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32,
+            }}>👤</div>
             <div>
-              <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{user?.name || '...'}</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{user?.phone || ''}</div>
-              <div style={{ marginTop: 6, background: C.gold, color: '#1A1A1A', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, display: 'inline-block', fontFamily: 'Inter' }}>Mteja</div>
+              {loading
+                ? <div style={{ height: 20, width: 120, background: 'rgba(255,255,255,0.2)', borderRadius: 8 }} />
+                : <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{name}</div>}
+              <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{phone}</div>
+              <div style={{
+                marginTop: 8, display: 'inline-block',
+                background: C.gold, color: '#1A1A1A',
+                fontSize: 11, fontWeight: 700,
+                padding: '3px 12px', borderRadius: 20, fontFamily: 'Inter',
+              }}>Mteja</div>
             </div>
           </div>
         </div>
@@ -60,50 +96,84 @@ export default function ProfileScreen() {
 
       <div className="scroll" style={{ background: C.bg }}>
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 20px 0' }}>
           {[
-            { label: 'Safari', value: stats.requests, icon: '🛍️' },
-            { label: 'Zilizokamilika', value: stats.completed, icon: '✅' },
-            { label: 'Pochi (TZS)', value: stats.wallet.toLocaleString(), icon: '💰' },
+            { icon: '🛍️', label: 'Safari Zote', value: String(requests) },
+            { icon: '✅', label: 'Zilizokamilika', value: String(completed) },
+            { icon: '💰', label: 'Pochi (TZS)', value: wallet > 0 ? fmt(wallet) : '0' },
           ].map(s => (
-            <div key={s.label} style={{ background: C.white, borderRadius: 14, padding: '14px 10px', textAlign: 'center', border: `1px solid ${C.border}` }}>
+            <div key={s.label} style={{
+              background: C.white, borderRadius: 14, padding: '14px 10px',
+              textAlign: 'center', border: `1px solid ${C.border}`,
+            }}>
               <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: C.primary }}>{s.value}</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 700, color: C.primary }}>{s.value}</div>
               <div style={{ fontFamily: 'Inter', fontSize: 10, color: C.textSec }}>{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Menu */}
-        <div style={{ margin: '0 20px', background: C.white, borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}` }}>
+        <div style={{ margin: '16px 20px 0', background: C.white, borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}` }}>
           {[
-            { icon: '📋', label: 'Safari Zangu', action: () => nav('/requests') },
-            { icon: '💳', label: 'Malipo & Pochi', action: () => nav('/earnings') },
-            { icon: '🎁', label: 'Alika Marafiki', action: () => {} },
-            { icon: '⚙️', label: 'Mipangilio', action: () => {} },
-            { icon: '❓', label: 'Msaada', action: () => {} },
+            { icon: '📋', label: 'Safari Zangu',     sub: 'Angalia maombi yako yote', action: () => nav('/requests') },
+            { icon: '💳', label: 'Matumizi',          sub: 'Historia ya malipo',        action: () => nav('/earnings') },
+            { icon: '🎁', label: 'Alika Marafiki',   sub: 'Pata TZS 2,000 kwa kila rafiki', action: () => {} },
+            { icon: '⭐', label: 'Wingas Wapendwa', sub: 'Wingas unaowapenda',         action: () => nav('/home') },
+            { icon: '❓', label: 'Msaada',            sub: 'Maswali & Majibu',           action: () => {} },
           ].map((item, i, arr) => (
             <div key={item.label} onClick={item.action}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', cursor: 'pointer', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-              <span style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ flex: 1, fontFamily: 'Inter', fontSize: 14, fontWeight: 500 }}>{item.label}</span>
-              <span style={{ color: '#D1D5DB' }}>›</span>
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '14px 16px', cursor: 'pointer',
+                borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: '#F8F9FA',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+              }}>{item.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>{item.label}</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec }}>{item.sub}</div>
+              </div>
+              <span style={{ color: '#D1D5DB', fontSize: 18 }}>›</span>
             </div>
           ))}
         </div>
 
+        {/* Become Winga CTA */}
+        <div style={{ margin: '16px 20px 0', background: '#FFF8E1', border: '1px solid rgba(249,168,37,0.3)', borderRadius: 16, padding: '16px' }}>
+          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#F57F17', marginBottom: 4 }}>
+            🛍️ Ungependa Kuwa Winga?
+          </div>
+          <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280', marginBottom: 12 }}>
+            Chapisha TZS 12,000–32,000 kwa saa ukisaidia wateja kununua
+          </div>
+          <button onClick={() => nav('/winga-register')}
+            style={{ background: '#F9A825', color: '#1A1A1A', border: 'none', borderRadius: 10, padding: '10px 20px', fontFamily: 'Inter', fontSize: 13, fontWeight: 700, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
+            Jiunge kama Winga →
+          </button>
+        </div>
+
+        {/* Logout */}
         <div style={{ margin: '16px 20px' }}>
-          <button onClick={handleLogout} style={{
-            width: '100%', height: 50, background: '#FFF5F5', color: '#D32F2F',
-            border: '1px solid #FECACA', borderRadius: 14,
-            fontFamily: 'Inter', fontSize: 15, fontWeight: 600, cursor: 'pointer',
-          }}>
+          <button onClick={handleLogout}
+            style={{
+              width: '100%', height: 50,
+              background: '#FFF5F5', color: '#D32F2F',
+              border: '1px solid #FECACA', borderRadius: 14,
+              fontFamily: 'Inter', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              WebkitTapHighlightColor: 'transparent',
+            }}>
             🚪 Toka kwenye Akaunti
           </button>
         </div>
-        <div style={{ height: 100 }} />
+        <div style={{ height: 20 }} />
       </div>
-      <BottomNav active="profile" />
+
+      <BottomNav />
     </div>
   )
 }

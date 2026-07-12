@@ -283,7 +283,7 @@ export default function WingaRegisterScreen() {
             </div>
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               {countdown > 0
-                ? <span style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec }}>Tuma tena baada ya 00:{String(countdown).padLeft(2, '0')}</span>
+                ? <span style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec }}>Tuma tena baada ya 00:{String(countdown).padStart(2, '0')}</span>
                 : <button onClick={() => sendOtp(true)} disabled={resending}
                     style={{ background: 'none', border: 'none', color: C.primary, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter', fontSize: 13 }}>
                     {resending ? '⏳ Inatuma...' : '🔄 Tuma Code Tena'}
@@ -325,6 +325,3 @@ function Btn({ label, onClick, disabled, loading }: { label: string; onClick: ()
   )
 }
 
-// String.prototype.padLeft shim
-declare global { interface String { padLeft(n: number, c: string): string } }
-if (!String.prototype.padLeft) String.prototype.padLeft = function(n: number, c: string) { return String(this).padStart(n, c) }
