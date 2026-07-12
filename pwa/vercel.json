@@ -1,7 +1,11 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets|icons|screenshots|sw\\.js|registerSW\\.js|manifest\\.webmanifest|favicon\\.svg|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ],
@@ -67,9 +71,5 @@
         }
       ]
     }
-  ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "framework": "vite"
+  ]
 }
