@@ -10,11 +10,15 @@
 -- Without this, NO postgres_changes events fire on the requests table.
 -- Both Winga and Customer rely on this.
 
--- Add requests table to the supabase_realtime publication
-ALTER PUBLICATION supabase_realtime ADD TABLE public.requests;
-
--- Also enable realtime for wingas (needed for customer to see Winga info)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.wingas;
+-- Add tables to supabase_realtime publication (idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='requests') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.requests;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='wingas') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.wingas;
+  END IF;
+END $$;
 
 
 -- ── 2. FIX: Allow Winga to UPDATE searching requests ─────────────
