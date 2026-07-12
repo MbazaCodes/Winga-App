@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Session } from './lib/session'
 import { Suspense, lazy } from 'react'
 import InstallBanner from './components/ui/InstallBanner'
+import { NotificationProvider } from './lib/NotificationProvider'
 
 // Screens
 import SplashScreen from './screens/SplashScreen'
@@ -42,7 +43,7 @@ const Loader = () => (
 
 export default function App() {
   return (
-    <>
+    <NotificationProvider>
       <InstallBanner />
       <Suspense fallback={<Loader />}>
         <Routes>
@@ -75,6 +76,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </>
+    </NotificationProvider>
   )
 }

@@ -116,10 +116,8 @@ export default function RequestsScreen() {
   const [submitting, setSubmitting] = useState(false)
   const [ratingSuccess, setRatingSuccess] = useState(false)
 
-  /* ═══ NOTIFICATION POPUP STATE ═══ */
-  const [acceptPopup, setAcceptPopup] = useState<{ visible: boolean; wingaName: string; wingaId: string; requestId: string }>({ visible: false, wingaName: '', wingaId: '', requestId: '' })
-  const popupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const channelRef = useRef<any>(null)
+  /* Refresh interval ref */
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   /* ---------------------------------------------------------------- */
   /*  Fetch requests                                                   */
@@ -163,70 +161,15 @@ export default function RequestsScreen() {
   useEffect(() => {
     mounted.current = true
     fetchRequests()
-
-    // ═══ REALTIME: Listen for status changes on MY requests ═══
-    const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const uid = user?.id || Session.uid()
-      if (!uid) return
-
-      if (!channelRef.current) {
-        channelRef.current = supabase
-          .channel(`customer-requests-${uid}`)
-          .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'requests',
-            filter: `customer_id=eq.${uid}`,
-          }, (payload: any) => {
-            const updated = payload.new
-            if (!mounted.current) return
-
-            // Check if a Winga just accepted our request
-            if (updated.status === 'accepted' && updated.winga_id && updated.accepted_at) {
-              // Fetch the Winga name for the popup
-              supabase.from('wingas')
-                .select('name')
-                .eq('id', updated.winga_id)
-                .single()
-                .then(({ data: w }) => {
-                  if (w && mounted.current) {
-                    showAcceptPopup(w.name, updated.winga_id, updated.id)
-                  }
-                })
-            }
-
-            // Also refresh the list to show updated status
-            fetchRequests()
-          })
-          .subscribe()
-      }
-    }
-
-    setupRealtime()
-
+    // Poll every 8s as fallback to catch realtime misses
+    pollRef.current = setInterval(fetchRequests, 8000)
     return () => {
       mounted.current = false
-      channelRef.current?.unsubscribe()
-      channelRef.current = null
-      if (popupTimer.current) clearTimeout(popupTimer.current)
+      if (pollRef.current) clearInterval(pollRef.current)
     }
   }, [fetchRequests])
 
-  /* ═══ Show accept notification popup ═══ */
-  const showAcceptPopup = (wingaName: string, wingaId: string, requestId: string) => {
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100])
-    setAcceptPopup({ visible: true, wingaName, wingaId, requestId })
-    if (popupTimer.current) clearTimeout(popupTimer.current)
-    popupTimer.current = setTimeout(() => {
-      setAcceptPopup(p => ({ ...p, visible: false }))
-    }, 6000)
-  }
 
-  const dismissAcceptPopup = () => {
-    if (popupTimer.current) clearTimeout(popupTimer.current)
-    setAcceptPopup(p => ({ ...p, visible: false }))
-  }
 
   /* ---------------------------------------------------------------- */
   /*  Filtered list                                                    */
@@ -642,98 +585,7 @@ export default function RequestsScreen() {
     )
   }
 
-  /* ---------------------------------------------------------------- */
-  /*  Accept notification popup                                         */
-  /* ---------------------------------------------------------------- */
 
-  function renderAcceptPopup() {
-    if (!acceptPopup.visible) return null
-    return (
-      <div
-        onClick={dismissAcceptPopup}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start',
-          justifyContent: 'center',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
-          padding: '16px',
-          opacity: acceptPopup.visible ? 1 : 0,
-          transition: 'opacity 0.3s ease',
-        }}
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            width: '100%', maxWidth: 360,
-            background: '#fff', borderRadius: 24,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            overflow: 'hidden',
-            animation: 'popup-bounce 0.5s ease',
-          }}
-        >
-          {/* Header */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1A5C2A, #2E7D40)',
-            padding: '20px 20px 16px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 24,
-                background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
-              }}>🤝</div>
-              <div>
-                <div style={{ fontFamily: 'Inter', fontSize: 17, fontWeight: 800, color: '#fff' }}>
-                  Winga Amekubali!
-                </div>
-                <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
-                  Ombi lako limechukuliwa
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div style={{ padding: '20px' }}>
-            <div style={{
-              background: '#E8F5E9', borderRadius: 14, padding: '14px 16px',
-              display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16,
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 24, background: '#1A5C2A',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: 22, fontWeight: 700, flexShrink: 0,
-              }}>
-                {acceptPopup.wingaName?.charAt(0) || 'W'}
-              </div>
-              <div>
-                <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>
-                  {acceptPopup.wingaName}
-                </div>
-                <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
-                  {acceptPopup.wingaId}
-                </div>
-              </div>
-            </div>
-
-            <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', lineHeight: 1.5, marginBottom: 16, textAlign: 'center' }}>
-              Winga wako amekubali ombi na atasafiri kutafuta bidhaa zako. Fuatilia maendeleo kwenye orodha ya safari.
-            </p>
-
-            <button
-              onClick={() => { dismissAcceptPopup(); nav('/requests', { replace: true }) }}
-              style={{
-                width: '100%', height: 48, background: '#1A5C2A', color: '#fff',
-                border: 'none', borderRadius: 12, fontFamily: 'Inter', fontSize: 15, fontWeight: 600,
-                cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,92,42,0.3)',
-              }}>
-              📋 Angalia Safari Yangu
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   /* ---------------------------------------------------------------- */
   /*  Main render                                                      */
@@ -798,19 +650,10 @@ export default function RequestsScreen() {
       {/* Rating modal */}
       {renderRatingModal()}
 
-      {/* Accept notification popup */}
-      {renderAcceptPopup()}
-
-      {/* Keyframe for slide-up (injected once) */}
       <style>{`
         @keyframes slideUp {
           from { transform: translateY(100%); }
           to { transform: translateY(0); }
-        }
-        @keyframes popup-bounce {
-          0% { transform: scale(0.8); opacity: 0; }
-          60% { transform: scale(1.05); }
-          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
 
