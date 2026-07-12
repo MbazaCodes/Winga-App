@@ -17,6 +17,11 @@ interface WingaRow {
   winga_id: string
   badge: string
   rating: number
+  phone: string
+  profile_photo: string | null
+  specialty: string
+  current_area: string | null
+  is_online: boolean
 }
 
 interface WingaPointRow {
@@ -28,12 +33,18 @@ interface RequestRow {
   id: string
   category: string
   meeting_point: string
+  shopping_area: string
   service_type: string
   estimated_price: number
+  total_price: number
   final_price: number | null
   status: string
   created_at: string
   completed_at: string | null
+  accepted_at: string | null
+  note: string | null
+  delivery_method: string
+  winga_id: string | null
   winga: WingaRow | null
   winga_points: WingaPointRow | null
 }
@@ -42,12 +53,12 @@ interface RequestRow {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  searching:  { label: 'Inatafuta Winga...', bg: '#F3F4F6', color: '#6B7280' },
-  accepted:   { label: 'Imekubaliwa',       bg: '#E3F2FD', color: '#1565C0' },
-  shopping:   { label: 'Inanunua...',       bg: '#E8F5E9', color: '#2E7D32' },
-  completed:  { label: 'Imekamilika ✓',    bg: '#E8F5E9', color: '#1A5C2A' },
-  cancelled:  { label: 'Imehairishwa',      bg: '#FFEBEE', color: '#D32F2F' },
+const STATUS_MAP: Record<string, { label: string; bg: string; color: string; emoji: string }> = {
+  searching:  { label: 'Inatafuta Winga...', bg: '#F3F4F6', color: '#6B7280', emoji: '🔍' },
+  accepted:   { label: 'Imekubaliwa',       bg: '#E3F2FD', color: '#1565C0', emoji: '✅' },
+  shopping:   { label: 'Winga Ananunua...',  bg: '#E8F5E9', color: '#2E7D32', emoji: '🛒' },
+  completed:  { label: 'Imekamilika',       bg: '#E8F5E9', color: '#1A5C2A', emoji: '✅' },
+  cancelled:  { label: 'Imehairishwa',      bg: '#FFEBEE', color: '#D32F2F', emoji: '❌' },
 }
 
 const SERVICE_TYPE_LABELS: Record<string, string> = {
@@ -105,6 +116,11 @@ export default function RequestsScreen() {
   const [submitting, setSubmitting] = useState(false)
   const [ratingSuccess, setRatingSuccess] = useState(false)
 
+  /* ═══ NOTIFICATION POPUP STATE ═══ */
+  const [acceptPopup, setAcceptPopup] = useState<{ visible: boolean; wingaName: string; wingaId: string; requestId: string }>({ visible: false, wingaName: '', wingaId: '', requestId: '' })
+  const popupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const channelRef = useRef<any>(null)
+
   /* ---------------------------------------------------------------- */
   /*  Fetch requests                                                   */
   /* ---------------------------------------------------------------- */
@@ -113,13 +129,17 @@ export default function RequestsScreen() {
     setLoading(true)
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id || Session.uid() || ''
+      if (!uid) return
+
       const { data, error: err } = await supabase
         .from('requests')
         .select(
-          `id, category, meeting_point, service_type, estimated_price, final_price, status, created_at, completed_at,
-            winga:wingas!winga_id(id, name, winga_id, badge, rating)`
+          `id, category, meeting_point, shopping_area, service_type, estimated_price, total_price, final_price, status, created_at, completed_at, accepted_at, note, delivery_method, winga_id,
+            winga:winga_id(id, name, winga_id, badge, rating, phone, profile_photo, specialty, current_area, is_online)`
         )
-        .eq('customer_id', (await supabase.auth.getUser()).data.user?.id || Session.uid() || '')
+        .eq('customer_id', uid)
         .order('created_at', { ascending: false })
 
       if (err) throw err
@@ -129,19 +149,84 @@ export default function RequestsScreen() {
         winga: Array.isArray(r.winga) ? r.winga[0] || null : r.winga || null,
         winga_points: Array.isArray(r.winga_points) ? r.winga_points[0] || null : r.winga_points || null,
       })) as RequestRow[]
-      setRequests(rows)
+
+      if (mounted.current) {
+        setRequests(rows)
+      }
     } catch (e: any) {
-      setError(e?.message || 'Imeshindwa kupakia safari')
+      if (mounted.current) setError(e?.message || 'Imeshindwa kupakia safari')
     } finally {
-      setLoading(false)
+      if (mounted.current) setLoading(false)
     }
   }, [])
 
   useEffect(() => {
     mounted.current = true
     fetchRequests()
-    return () => { mounted.current = false }
+
+    // ═══ REALTIME: Listen for status changes on MY requests ═══
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      const uid = user?.id || Session.uid()
+      if (!uid) return
+
+      if (!channelRef.current) {
+        channelRef.current = supabase
+          .channel(`customer-requests-${uid}`)
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'requests',
+            filter: `customer_id=eq.${uid}`,
+          }, (payload: any) => {
+            const updated = payload.new
+            if (!mounted.current) return
+
+            // Check if a Winga just accepted our request
+            if (updated.status === 'accepted' && updated.winga_id && updated.accepted_at) {
+              // Fetch the Winga name for the popup
+              supabase.from('wingas')
+                .select('name')
+                .eq('id', updated.winga_id)
+                .single()
+                .then(({ data: w }) => {
+                  if (w && mounted.current) {
+                    showAcceptPopup(w.name, updated.winga_id, updated.id)
+                  }
+                })
+            }
+
+            // Also refresh the list to show updated status
+            fetchRequests()
+          })
+          .subscribe()
+      }
+    }
+
+    setupRealtime()
+
+    return () => {
+      mounted.current = false
+      channelRef.current?.unsubscribe()
+      channelRef.current = null
+      if (popupTimer.current) clearTimeout(popupTimer.current)
+    }
   }, [fetchRequests])
+
+  /* ═══ Show accept notification popup ═══ */
+  const showAcceptPopup = (wingaName: string, wingaId: string, requestId: string) => {
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100])
+    setAcceptPopup({ visible: true, wingaName, wingaId, requestId })
+    if (popupTimer.current) clearTimeout(popupTimer.current)
+    popupTimer.current = setTimeout(() => {
+      setAcceptPopup(p => ({ ...p, visible: false }))
+    }, 6000)
+  }
+
+  const dismissAcceptPopup = () => {
+    if (popupTimer.current) clearTimeout(popupTimer.current)
+    setAcceptPopup(p => ({ ...p, visible: false }))
+  }
 
   /* ---------------------------------------------------------------- */
   /*  Filtered list                                                    */
@@ -231,30 +316,52 @@ export default function RequestsScreen() {
 
   function renderCard(r: RequestRow) {
     const st = STATUS_MAP[r.status] || STATUS_MAP.searching
-    const price = r.status === 'completed' && r.final_price != null ? fmt(r.final_price) : fmt(r.estimated_price)
+    const price = r.status === 'completed' && r.final_price != null ? fmt(r.final_price) : fmt(r.total_price || r.estimated_price)
     const serviceLabel = SERVICE_TYPE_LABELS[r.service_type] || r.service_type
     const isRated = !!r.winga_points
     const needsRating = r.status === 'completed' && !isRated
+    const isActive = ['accepted', 'shopping'].includes(r.status)
 
     return (
-      <div key={r.id} style={{ background: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+      <div key={r.id} style={{
+        background: '#fff', borderRadius: 16, padding: 16, marginBottom: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        border: isActive ? '2px solid #1A5C2A' : '1px solid #F3F4F6',
+        transition: 'border-color 0.3s',
+      }}>
         {/* Top row: category + status */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 600, color: '#1A1A1A' }}>{r.category}</span>
           <span style={{
             background: st.bg, color: st.color, padding: '3px 10px', borderRadius: 100,
             fontSize: 11, fontWeight: 600, fontFamily: 'Inter', display: 'inline-flex', alignItems: 'center',
-            whiteSpace: 'nowrap', flexShrink: 0,
+            whiteSpace: 'nowrap', flexShrink: 0, gap: 4,
           }}>
+            <span style={{ fontSize: 11 }}>{st.emoji}</span>
             {st.label}
           </span>
         </div>
 
         {/* Meeting point */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
           <span style={{ fontSize: 13 }}>📍</span>
           <span style={{ fontFamily: 'Inter', fontSize: 13, color: '#4B5563' }}>{r.meeting_point}</span>
         </div>
+
+        {/* Shopping area */}
+        {r.shopping_area && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <span style={{ fontSize: 13 }}>🛒</span>
+            <span style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>{r.shopping_area}</span>
+          </div>
+        )}
+
+        {/* Note */}
+        {r.note && (
+          <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280', marginBottom: 6, fontStyle: 'italic' }}>
+            📝 {r.note}
+          </div>
+        )}
 
         {/* Service type badge + price + time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -268,6 +375,102 @@ export default function RequestsScreen() {
           <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF', marginLeft: 'auto' }}>{timeAgo(r.created_at)}</span>
         </div>
 
+        {/* ═══ WINGA INFO — shown for ALL active + completed states ═══ */}
+        {r.winga && isActive && (
+          <div style={{
+            background: '#E8F5E9', borderRadius: 14, padding: '12px 14px',
+            marginTop: 8, marginBottom: 8,
+            display: 'flex', gap: 12, alignItems: 'center',
+          }}>
+            {/* Avatar */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {r.winga.profile_photo ? (
+                <img src={r.winga.profile_photo} alt={r.winga.name} style={{ width: 44, height: 44, borderRadius: 22, objectFit: 'cover' }} />
+              ) : (
+                <div style={{
+                  width: 44, height: 44, borderRadius: 22, background: '#1A5C2A',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 700,
+                }}>
+                  {r.winga.name?.charAt(0) || 'W'}
+                </div>
+              )}
+              {r.winga.is_online && (
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, background: '#22C55E', border: '2px solid #E8F5E9' }} />
+              )}
+            </div>
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>
+                  {r.winga.name}
+                </span>
+                <WingaBadge badge={r.winga.badge} />
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280', marginBottom: 2 }}>
+                {r.winga.specialty}{r.winga.current_area ? ` · ${r.winga.current_area}` : ''}
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>
+                {r.winga.winga_id} {r.winga.rating != null ? `· ⭐ ${r.winga.rating.toFixed(1)}` : ''}
+              </div>
+            </div>
+
+            {/* Call button */}
+            {r.winga.phone && (
+              <a href={`tel:${r.winga.phone}`}
+                style={{
+                  width: 42, height: 42, borderRadius: 21, background: '#1A5C2A',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 18, textDecoration: 'none', flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(26,92,42,0.3)',
+                }}
+                onClick={(e) => e.stopPropagation()}>
+                📞
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Progress tracker for active requests */}
+        {isActive && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, marginBottom: 4 }}>
+            {[
+              { label: 'Ombi', done: true },
+              { label: 'Imekubaliwa', done: r.status !== 'searching' },
+              { label: 'Inanunua', done: r.status === 'shopping' },
+              { label: 'Imekamilika', done: false },
+            ].map((step, i, arr) => (
+              <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                  <div style={{
+                    width: step.done ? 20 : 16, height: step.done ? 20 : 16,
+                    borderRadius: step.done ? 10 : 8,
+                    background: step.done ? '#1A5C2A' : '#E5E7EB',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: step.done ? 10 : 8, color: '#fff',
+                    transition: 'all 0.3s',
+                  }}>
+                    {step.done ? '✓' : (i + 1)}
+                  </div>
+                  <span style={{
+                    fontFamily: 'Inter', fontSize: 9, marginTop: 4, fontWeight: step.done ? 600 : 400,
+                    color: step.done ? '#1A5C2A' : '#9CA3AF', textAlign: 'center',
+                  }}>
+                    {step.label}
+                  </span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div style={{
+                    height: 2, flex: 1, maxWidth: 24,
+                    background: step.done && arr[i + 1].done ? '#1A5C2A' : '#E5E7EB',
+                    transition: 'background 0.3s',
+                  }} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Winga info for completed */}
         {r.status === 'completed' && r.winga && (
           <div style={{
@@ -278,13 +481,15 @@ export default function RequestsScreen() {
               width: 32, height: 32, borderRadius: 16, background: '#E8F5E9',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0,
             }}>
-              👤
+              {r.winga.profile_photo
+                ? <img src={r.winga.profile_photo} alt="" style={{ width: 32, height: 32, borderRadius: 16, objectFit: 'cover' }} />
+                : '👤'}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{r.winga.name}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                 <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>⭐ {r.winga.rating?.toFixed(1) || '—'}</span>
-                <WingaBadge tier={r.winga.badge} />
+                <WingaBadge badge={r.winga.badge} />
               </div>
             </div>
           </div>
@@ -438,6 +643,99 @@ export default function RequestsScreen() {
   }
 
   /* ---------------------------------------------------------------- */
+  /*  Accept notification popup                                         */
+  /* ---------------------------------------------------------------- */
+
+  function renderAcceptPopup() {
+    if (!acceptPopup.visible) return null
+    return (
+      <div
+        onClick={dismissAcceptPopup}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-start',
+          justifyContent: 'center',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+          padding: '16px',
+          opacity: acceptPopup.visible ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '100%', maxWidth: 360,
+            background: '#fff', borderRadius: 24,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            overflow: 'hidden',
+            animation: 'popup-bounce 0.5s ease',
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            background: 'linear-gradient(135deg, #1A5C2A, #2E7D40)',
+            padding: '20px 20px 16px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 24,
+                background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+              }}>🤝</div>
+              <div>
+                <div style={{ fontFamily: 'Inter', fontSize: 17, fontWeight: 800, color: '#fff' }}>
+                  Winga Amekubali!
+                </div>
+                <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                  Ombi lako limechukuliwa
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: '20px' }}>
+            <div style={{
+              background: '#E8F5E9', borderRadius: 14, padding: '14px 16px',
+              display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16,
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 24, background: '#1A5C2A',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 22, fontWeight: 700, flexShrink: 0,
+              }}>
+                {acceptPopup.wingaName?.charAt(0) || 'W'}
+              </div>
+              <div>
+                <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>
+                  {acceptPopup.wingaName}
+                </div>
+                <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
+                  {acceptPopup.wingaId}
+                </div>
+              </div>
+            </div>
+
+            <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', lineHeight: 1.5, marginBottom: 16, textAlign: 'center' }}>
+              Winga wako amekubali ombi na atasafiri kutafuta bidhaa zako. Fuatilia maendeleo kwenye orodha ya safari.
+            </p>
+
+            <button
+              onClick={() => { dismissAcceptPopup(); nav('/requests', { replace: true }) }}
+              style={{
+                width: '100%', height: 48, background: '#1A5C2A', color: '#fff',
+                border: 'none', borderRadius: 12, fontFamily: 'Inter', fontSize: 15, fontWeight: 600,
+                cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,92,42,0.3)',
+              }}>
+              📋 Angalia Safari Yangu
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ---------------------------------------------------------------- */
   /*  Main render                                                      */
   /* ---------------------------------------------------------------- */
 
@@ -500,11 +798,19 @@ export default function RequestsScreen() {
       {/* Rating modal */}
       {renderRatingModal()}
 
+      {/* Accept notification popup */}
+      {renderAcceptPopup()}
+
       {/* Keyframe for slide-up (injected once) */}
       <style>{`
         @keyframes slideUp {
           from { transform: translateY(100%); }
           to { transform: translateY(0); }
+        }
+        @keyframes popup-bounce {
+          0% { transform: scale(0.8); opacity: 0; }
+          60% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
 

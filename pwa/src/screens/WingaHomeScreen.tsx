@@ -184,8 +184,13 @@ export default function WingaHomeScreen() {
   }
 
   const updateStatus = async (reqId: string, status: string) => {
-    await supabase.from('requests').update({ status }).eq('id', reqId)
-    setMyReqs(rs => rs.map(r => r.id === reqId ? { ...r, status } : r))
+    const updateData: Record<string, any> = { status }
+    if (status === 'completed') {
+      updateData.completed_at = new Date().toISOString()
+      updateData.final_price = myReqs.find(r => r.id === reqId)?.total_price || null
+    }
+    await supabase.from('requests').update(updateData).eq('id', reqId)
+    setMyReqs(rs => rs.map(r => r.id === reqId ? { ...r, status, ...(updateData.completed_at ? { completed_at: updateData.completed_at } : {}) } : r))
   }
 
   const myActive = myReqs.filter(r => ['accepted', 'shopping'].includes(r.status))
