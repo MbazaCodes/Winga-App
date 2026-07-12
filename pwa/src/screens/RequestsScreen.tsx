@@ -117,8 +117,7 @@ export default function RequestsScreen() {
         .from('requests')
         .select(
           `id, category, meeting_point, service_type, estimated_price, final_price, status, created_at, completed_at,
-            winga:wingas!winga_id(id, name, winga_id, badge, rating),
-            winga_points(request_id, point)`
+            winga:wingas!winga_id(id, name, winga_id, badge, rating)`
         )
         .eq('customer_id', (await supabase.auth.getUser()).data.user?.id || Session.uid() || '')
         .order('created_at', { ascending: false })
