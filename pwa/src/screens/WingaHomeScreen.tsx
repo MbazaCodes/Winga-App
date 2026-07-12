@@ -14,11 +14,18 @@ interface WingaProfile {
   id: string; name: string; badge: string; is_online: boolean
   total_trips: number; total_earnings: number; winga_score: number
   rated_trips: number; total_points: number; current_city: string; winga_id: string
+  profile_complete: boolean
+}
+
+interface ProfileStatus {
+  success: boolean; profile_complete: boolean; filled: number; total: number
+  percent: number; winga_id: string; fields: { field: string; done: boolean }[]
 }
 
 export default function WingaHomeScreen() {
   const nav = useNavigate()
   const [profile, setProfile] = useState<WingaProfile | null>(null)
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus | null>(null)
   const [requests, setRequests] = useState<Request[]>([])
   const [todayEarnings, setTodayEarnings] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -35,15 +42,24 @@ export default function WingaHomeScreen() {
     if (!uid) return
     try {
       const { data: w } = await supabase.from('wingas')
-        .select('id,name,badge,is_online,total_trips,total_earnings,winga_score,rated_trips,total_points,current_city,winga_id')
+        .select('id,name,badge,is_online,total_trips,total_earnings,winga_score,rated_trips,total_points,current_city,winga_id,profile_complete')
         .eq('user_id', uid).maybeSingle()
       if (w) {
         setProfile(w)
+        // Check profile completion status
+        const { data: status } = await supabase.rpc('get_winga_profile_status', { p_user_id: uid })
+        if (status) {
+          setProfileStatus(status as ProfileStatus)
+          // Update local profile_complete if it changed
+          if (status.profile_complete !== w.profile_complete) {
+            setProfile({ ...w, profile_complete: status.profile_complete })
+          }
+        }
         // Load active + recent requests
         const { data: reqs } = await supabase.from('requests')
           .select('id,status,service_type,note,created_at,total_price,customer:customer_id(name,phone)')
           .eq('winga_id', w.id)
-          .in('status', ['searching','accepted','shopping','completed'])
+          .in('status', ['searching', 'accepted', 'shopping', 'completed'])
           .order('created_at', { ascending: false })
           .limit(20)
         if (reqs) {
@@ -65,6 +81,10 @@ export default function WingaHomeScreen() {
 
   const toggleOnline = async () => {
     if (!profile) return
+    // BLOCK if profile not complete
+    if (!profile.profile_complete) {
+      return
+    }
     setToggling(true)
     const next = !profile.is_online
     await supabase.from('wingas').update({ is_online: next }).eq('id', profile.id)
@@ -82,10 +102,13 @@ export default function WingaHomeScreen() {
     setRequests(rs => rs.map(r => r.id === reqId ? { ...r, status } : r))
   }
 
-  const active = requests.filter(r => ['searching','accepted','shopping'].includes(r.status))
+  const active = requests.filter(r => ['searching', 'accepted', 'shopping'].includes(r.status))
   const recent = requests.filter(r => r.status === 'completed').slice(0, 5)
 
   if (loading) return <LoadingPage />
+
+  const incomplete = profile && !profile.profile_complete
+  const pct = profileStatus?.percent || 0
 
   return (
     <div className="page">
@@ -96,15 +119,26 @@ export default function WingaHomeScreen() {
             <div>
               <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Habari,</div>
               <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: '#fff' }}>{profile?.name?.split(' ')[0] || 'Winga'} 👋</div>
-              <div style={{ marginTop: 6 }}><WingaBadge badge={profile?.badge || 'Starter'} /></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <WingaBadge badge={profile?.badge || 'Starter'} />
+                <span style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>
+                  {profile?.winga_id || ''}
+                </span>
+              </div>
             </div>
             {/* Online toggle */}
-            <div onClick={toggling ? undefined : toggleOnline}
-              style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, border: '1.5px solid rgba(255,255,255,0.3)' }}>
+            <div
+              onClick={toggling ? undefined : (incomplete ? () => nav('/winga/profile') : toggleOnline)}
+              style={{
+                background: incomplete ? 'rgba(255,77,77,0.3)' : 'rgba(255,255,255,0.15)',
+                borderRadius: 20, padding: '10px 16px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8,
+                border: incomplete ? '1.5px solid rgba(255,77,77,0.6)' : '1.5px solid rgba(255,255,255,0.3)',
+              }}>
               {toggling ? <span style={{ width: 14, height: 14, borderRadius: 7, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
-                : <div style={{ width: 10, height: 10, borderRadius: 5, background: profile?.is_online ? '#4ADE80' : '#9CA3AF' }} />}
+                : <div style={{ width: 10, height: 10, borderRadius: 5, background: incomplete ? '#EF5350' : profile?.is_online ? '#4ADE80' : '#9CA3AF' }} />}
               <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: '#fff' }}>
-                {profile?.is_online ? 'Mtandaoni' : 'Nje'}
+                {incomplete ? 'Wasifu Haujakamilika' : profile?.is_online ? 'Mtandaoni' : 'Nje'}
               </span>
             </div>
           </div>
@@ -125,8 +159,75 @@ export default function WingaHomeScreen() {
       </div>
 
       <div className="scroll">
-        {/* Not online warning */}
-        {!profile?.is_online && (
+        {/* ═══ PROFILE COMPLETION BANNER ═══ */}
+        {incomplete && (
+          <div style={{ margin: '16px 20px 0', background: '#FFEBEE', border: '2px solid #D32F2F', borderRadius: 16, padding: '16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 28, flexShrink: 0 }}>🚫</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#D32F2F', marginBottom: 4 }}>
+                Wasifu Wako Haujakamilika
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#5D4037', marginBottom: 10, lineHeight: 1.5 }}>
+                Lazima uwasilishe wasifu wako 100% kabla ya kupokea maombi ya wateja.
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#D32F2F', fontWeight: 600 }}>
+                  Maendeleo: {pct}%
+                </span>
+                <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280' }}>
+                  {profileStatus?.filled || 0}/{profileStatus?.total || 6} fields
+                </span>
+              </div>
+              <div style={{ height: 8, background: '#FFCDD2', borderRadius: 4, marginBottom: 12 }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, width: `${pct}%`,
+                  background: pct >= 100 ? '#1A5C2A' : '#D32F2F',
+                  transition: 'width 0.5s',
+                }} />
+              </div>
+
+              {/* Missing fields */}
+              {profileStatus?.fields && (
+                <div style={{ marginBottom: 12 }}>
+                  {profileStatus.fields.filter(f => !f.done).map(f => (
+                    <div key={f.field} style={{ fontFamily: 'Inter', fontSize: 11, color: '#C62828', padding: '2px 0' }}>
+                      ⬜ {f.field}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button onClick={() => nav('/winga/profile')}
+                style={{
+                  width: '100%', height: 42, background: '#D32F2F', color: '#fff',
+                  border: 'none', borderRadius: 10, fontFamily: 'Inter',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}>
+                📋 Maliza Wasifu Sasa
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ REMINDER: wasifu complete but NIDA missing ═══ */}
+        {profile?.profile_complete === false && profileStatus && profileStatus.percent >= 80 && profileStatus.percent < 100 && (
+          <div style={{ margin: '12px 20px 0', background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ fontSize: 20 }}>⚡</span>
+            <div>
+              <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: '#F57F17' }}>
+                Karibu kukamilisha — {100 - pct}% zimebaki tu!
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>
+                {profileStatus.fields.filter(f => !f.done).map(f => f.field).join(', ')}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Not online warning (only if profile IS complete) */}
+        {!profile?.is_online && !incomplete && (
           <div style={{ margin: '16px 20px 0', background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
             <span style={{ fontSize: 20 }}>⚠️</span>
             <div>
@@ -191,7 +292,11 @@ export default function WingaHomeScreen() {
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🛍️</div>
             <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Hakuna maombi bado</div>
-            <div style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280' }}>Washa "Mtandaoni" na subiri wateja watakapokuja!</div>
+            <div style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280' }}>
+              {incomplete
+                ? 'Maliza wasifu wako 100% kwanza, kisha washa "Mtandaoni" na subiri wateja!'
+                : 'Washa "Mtandaoni" na subiri wateja watakapokuja!'}
+            </div>
           </div>
         )}
         <div style={{ height: 100 }} />

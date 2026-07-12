@@ -16,13 +16,16 @@ interface WingaData {
   total_trips: number; total_earnings: number
   winga_score: number; rated_trips: number; total_points: number
   winga_id: string; is_top_rated: boolean
-  profile_photo_url: string | null
+  profile_photo_url: string | null; national_id: string | null
   tin_number: string | null
   instagram: string | null; facebook: string | null
   tiktok: string | null; twitter: string | null; whatsapp: string | null
+  profile_complete: boolean
 }
 
-type EditSection = 'profile' | 'social' | 'tax' | null
+interface FieldStatus { field: string; done: boolean }
+
+type EditSection = 'profile' | 'nida' | 'social' | 'tax' | null
 
 export default function WingaProfileScreen() {
   const nav = useNavigate()
@@ -30,12 +33,16 @@ export default function WingaProfileScreen() {
   const [editSection, setEditSection] = useState<EditSection>(null)
   const [form, setForm] = useState({
     specialty: '', city: '', area: '', bio: '',
+    national_id: '',
     instagram: '', facebook: '', tiktok: '', twitter: '', whatsapp: '',
     tin_number: '',
   })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [profileFields, setProfileFields] = useState<FieldStatus[]>([])
+  const [profilePercent, setProfilePercent] = useState(0)
+  const [profileComplete, setProfileComplete] = useState(false)
   const mounted = useRef(true)
 
   useEffect(() => { mounted.current = true; load(); return () => { mounted.current = false } }, [])
@@ -45,17 +52,25 @@ export default function WingaProfileScreen() {
     const uid = user?.id || Session.uid()
     if (!uid) { setLoading(false); return }
     const { data } = await supabase.from('wingas')
-      .select('id,name,phone,email,specialty,current_city,current_area,bio,badge,is_online,total_trips,total_earnings,winga_score,rated_trips,total_points,winga_id,is_top_rated,profile_photo_url,tin_number,instagram,facebook,tiktok,twitter,whatsapp')
+      .select('id,name,phone,email,specialty,current_city,current_area,bio,badge,is_online,total_trips,total_earnings,winga_score,rated_trips,total_points,winga_id,is_top_rated,profile_photo_url,tin_number,instagram,facebook,tiktok,twitter,whatsapp,national_id,profile_complete')
       .eq('user_id', uid).maybeSingle()
     if (data && mounted.current) {
       setWinga(data as WingaData)
       setForm({
         specialty: data.specialty || '', city: data.current_city || '',
         area: data.current_area || '', bio: data.bio || '',
+        national_id: data.national_id || '',
         instagram: data.instagram || '', facebook: data.facebook || '',
         tiktok: data.tiktok || '', twitter: data.twitter || '',
         whatsapp: data.whatsapp || '', tin_number: data.tin_number || '',
       })
+    }
+    // Load profile completion status
+    const { data: status } = await supabase.rpc('get_winga_profile_status', { p_user_id: uid })
+    if (status && mounted.current) {
+      setProfileFields(status.fields || [])
+      setProfilePercent(status.percent || 0)
+      setProfileComplete(status.profile_complete)
     }
     if (mounted.current) setLoading(false)
   }
@@ -83,6 +98,7 @@ export default function WingaProfileScreen() {
     if (fields.city !== undefined) { update.current_city = fields.city; update.home_location = `${fields.area || form.area}, ${fields.city}` }
     if (fields.area !== undefined) update.current_area = fields.area
     if (fields.bio !== undefined) update.bio = fields.bio || null
+    if (fields.national_id !== undefined) update.national_id = fields.national_id || null
     if (fields.tin_number !== undefined) update.tin_number = fields.tin_number || null
     if (fields.instagram !== undefined) update.instagram = fields.instagram || null
     if (fields.facebook !== undefined) update.facebook = fields.facebook || null
@@ -90,6 +106,17 @@ export default function WingaProfileScreen() {
     if (fields.twitter !== undefined) update.twitter = fields.twitter || null
     if (fields.whatsapp !== undefined) update.whatsapp = fields.whatsapp || null
     await supabase.from('wingas').update(update).eq('id', winga.id)
+
+    // Re-check profile completion
+    const { data: { user } } = await supabase.auth.getUser()
+    const uid = user?.id || Session.uid() || ''
+    const { data: status } = await supabase.rpc('get_winga_profile_status', { p_user_id: uid })
+    if (status && mounted.current) {
+      setProfileFields(status.fields || [])
+      setProfilePercent(status.percent || 0)
+      setProfileComplete(status.profile_complete)
+    }
+
     await load()
     if (mounted.current) { setSaving(false); setEditSection(null) }
   }
@@ -131,14 +158,68 @@ export default function WingaProfileScreen() {
             </div>
             <div>
               <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: C.white }}>{winga.name}</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{winga.winga_id}</div>
-              <WingaBadge badge={winga.badge} />
+              <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>🪪 {winga.winga_id}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <WingaBadge badge={winga.badge} />
+                {profileComplete && (
+                  <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 8px', fontFamily: 'Inter', fontSize: 10, color: C.gold, fontWeight: 600 }}>
+                    ✅ 100%
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="scroll" style={{ background: C.bg }}>
+        {/* ═══ PROFILE COMPLETION CARD ═══ */}
+        <div style={{ margin: '12px 16px 0', background: C.white, borderRadius: 16, padding: '14px 16px', border: profileComplete ? `2px solid ${C.primary}` : `2px solid #F9A825` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: profileComplete ? C.primary : '#F57F17' }}>
+              {profileComplete ? '✅ Wasifu Kamili' : '📋 Umaliziaji wa Wasifu'}
+            </span>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 800, color: profileComplete ? C.primary : '#F9A825' }}>
+              {profilePercent}%
+            </span>
+          </div>
+          <div style={{ height: 10, background: '#F3F4F6', borderRadius: 5, marginBottom: 12 }}>
+            <div style={{
+              height: '100%', borderRadius: 5, width: `${profilePercent}%`,
+              background: profileComplete
+                ? `linear-gradient(90deg, ${C.primary}, #4CAF50)`
+                : `linear-gradient(90deg, #F9A825, #FF6F00)`,
+              transition: 'width 0.5s',
+            }} />
+          </div>
+          {/* Field checklist */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            {profileFields.map(f => (
+              <div key={f.field} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '4px 0', opacity: f.done ? 1 : 0.7,
+              }}>
+                <span style={{ fontSize: 14 }}>{f.done ? '✅' : '⬜'}</span>
+                <span style={{
+                  fontFamily: 'Inter', fontSize: 11,
+                  color: f.done ? C.textSec : '#D32F2F',
+                  fontWeight: f.done ? 400 : 600,
+                  textDecoration: f.done ? 'line-through' : 'none',
+                }}>
+                  {f.field}
+                </span>
+              </div>
+            ))}
+          </div>
+          {!profileComplete && (
+            <div style={{ marginTop: 10, background: '#FFEBEE', borderRadius: 10, padding: '8px 12px' }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#D32F2F', fontWeight: 600 }}>
+                ⚠️ Wasifu lazima uwe 100% ili kupokea maombi ya wateja.
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, padding: '14px 16px 0' }}>
           {[
@@ -151,6 +232,50 @@ export default function WingaProfileScreen() {
               <div style={{ fontFamily: 'Inter', fontSize: 10, color: C.textSec }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* NIDA SECTION */}
+        <div style={{ margin: '12px 16px 0', background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
+            <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700 }}>🪪 Namba ya NIDA</span>
+            <button onClick={() => setEditSection(editSection === 'nida' ? null : 'nida')}
+              style={{ background: winga.national_id ? 'rgba(76,175,80,0.1)' : C.primary + '15', border: 'none', color: winga.national_id ? '#2E7D32' : C.primary, borderRadius: 8, padding: '4px 10px', fontFamily: 'Inter', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              {winga.national_id ? '✅ Imewekwa' : '+ Ongeza'}
+            </button>
+          </div>
+          {editSection !== 'nida' ? (
+            <div style={{ padding: '12px 16px' }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 600, color: winga.national_id ? C.primary : '#9CA3AF', letterSpacing: 1 }}>
+                {winga.national_id || 'Haijawekwa'}
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec, marginTop: 4 }}>
+                Namba hii inahitajika kwa uthibitisho kamili
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '14px 16px' }}>
+              <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Namba ya NIDA *</label>
+              <input
+                value={form.national_id}
+                onChange={e => setForm(f => ({ ...f, national_id: e.target.value.replace(/\D/g, '').slice(0, 20) }))}
+                type="tel"
+                inputMode="numeric"
+                placeholder="1234567890123"
+                maxLength={20}
+                style={{
+                  width: '100%', border: `1.5px solid ${C.border}`, borderRadius: 10,
+                  padding: '11px 14px', fontFamily: 'monospace', fontSize: 16,
+                  letterSpacing: 2, fontWeight: 600, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ background: '#FFF8E1', borderRadius: 10, padding: '10px 12px', marginTop: 8, marginBottom: 10 }}>
+                <p style={{ fontFamily: 'Inter', fontSize: 12, color: '#F57F17', margin: 0 }}>
+                  ℹ️ Namba ya NIDA ni ya siri na haitaonekana kwa wateja.
+                </p>
+              </div>
+              <BtnsRow onSave={() => save({ national_id: form.national_id })} onCancel={() => setEditSection(null)} saving={saving} />
+            </div>
+          )}
         </div>
 
         {/* TAX BREAKDOWN */}
@@ -207,10 +332,11 @@ export default function WingaProfileScreen() {
               { icon: '🛍️', label: 'Utaalamu', val: winga.specialty },
               { icon: '📍', label: 'Eneo', val: `${winga.current_area || ''}, ${winga.current_city}`.replace(/^, /, '') },
               { icon: '📱', label: 'Simu', val: winga.phone },
+              { icon: '🪪', label: 'Winga ID', val: winga.winga_id },
               { icon: '📧', label: 'Barua Pepe', val: winga.email || 'Haijaongezwa' },
               { icon: '📝', label: 'Kuhusu', val: winga.bio || 'Haijaongezwa' },
             ].map((row, i, arr) => (
-              <div key={row.label} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: i < arr.length-1 ? `1px solid ${C.border}` : 'none' }}>
+              <div key={row.label} style={{ display: 'flex', gap: 12, padding: '12px 16px', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                 <span style={{ fontSize: 16 }}>{row.icon}</span>
                 <div>
                   <div style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec, marginBottom: 2 }}>{row.label}</div>
@@ -223,7 +349,7 @@ export default function WingaProfileScreen() {
               <SelField label="Utaalamu" val={form.specialty} set={v => setForm(f => ({ ...f, specialty: v }))} opts={SPECIALTIES} />
               <SelField label="Mji" val={form.city} set={v => setForm(f => ({ ...f, city: v, area: AREAS[v]?.[0] || '' }))} opts={Object.keys(AREAS)} />
               <SelField label="Eneo" val={form.area} set={v => setForm(f => ({ ...f, area: v }))} opts={AREAS[form.city] || []} />
-              <TxtField label="Kuhusu Mimi" val={form.bio} set={v => setForm(f => ({ ...f, bio: v }))} placeholder="Ninafahamu Kariakoo vizuri..." rows={3} />
+              <TxtField label="Kuhusu Mimi *" val={form.bio} set={v => setForm(f => ({ ...f, bio: v }))} placeholder="Ninafahamu Kariakoo vizuri..." rows={3} />
               <BtnsRow onSave={() => save({ specialty: form.specialty, city: form.city, area: form.area, bio: form.bio })} onCancel={() => setEditSection(null)} saving={saving} />
             </div>
           )}
@@ -247,7 +373,7 @@ export default function WingaProfileScreen() {
                 { icon: '🐦', label: 'Twitter/X', val: winga.twitter, prefix: '@' },
                 { icon: '💚', label: 'WhatsApp', val: winga.whatsapp, prefix: '+' },
               ].map((s, i, arr) => (
-                <div key={s.label} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: i < arr.length-1 ? `1px solid ${C.border}` : 'none' }}>
+                <div key={s.label} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                   <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{s.icon}</span>
                   <div>
                     <span style={{ fontFamily: 'Inter', fontSize: 12, color: C.textSec }}>{s.label}: </span>
