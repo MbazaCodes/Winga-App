@@ -106,7 +106,6 @@ export async function POST(request: Request) {
       path: '/',
     })
 
-    console.log('[login] Admin login success:', email)
     return response
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
