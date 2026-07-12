@@ -2,7 +2,7 @@
 -- Winga App — COMPLETE DATABASE SETUP (All-in-One)
 -- Run this ENTIRE file in the Supabase SQL Editor.
 -- https://supabase.com/dashboard/project/kevdbsyiqelksxvmuped/sql/new
--- Drops and rebuilds everything — safe to re-run.
+-- Safe to re-run: drops and rebuilds everything.
 -- ============================================================
 
 DROP SCHEMA IF EXISTS public CASCADE;
@@ -283,93 +283,121 @@ RETURNS BOOLEAN AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ── Users ─────────────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "users_own_read" ON public.users;
 CREATE POLICY "users_own_read"   ON public.users FOR SELECT USING (auth.uid() = id OR public.is_admin());
+DROP POLICY IF EXISTS "users_own_update" ON public.users;
 CREATE POLICY "users_own_update" ON public.users FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "users_insert" ON public.users;
 CREATE POLICY "users_insert"     ON public.users FOR INSERT WITH CHECK (true); -- registration
+DROP POLICY IF EXISTS "admin_all_users" ON public.users;
 CREATE POLICY "admin_all_users"  ON public.users FOR ALL USING (public.is_admin());
 
 -- ── Verification Tiers (public read) ─────────────────────────────────────
+DROP POLICY IF EXISTS "tiers_public_read" ON public.verification_tiers;
 CREATE POLICY "tiers_public_read" ON public.verification_tiers FOR SELECT USING (true);
+DROP POLICY IF EXISTS "tiers_admin_write" ON public.verification_tiers;
 CREATE POLICY "tiers_admin_write" ON public.verification_tiers FOR ALL USING (public.is_admin());
 
 -- ── Wingas ────────────────────────────────────────────────────────────────
 -- Public can see active verified wingas
+DROP POLICY IF EXISTS "wingas_public_active" ON public.wingas;
 CREATE POLICY "wingas_public_active" ON public.wingas
   FOR SELECT USING (status = 'active' AND verification_status = 'verified');
 
 -- Winga sees own profile
+DROP POLICY IF EXISTS "wingas_own" ON public.wingas;
 CREATE POLICY "wingas_own" ON public.wingas
   FOR ALL USING (auth.uid() = user_id);
 
 -- Admin sees all
+DROP POLICY IF EXISTS "wingas_admin_all" ON public.wingas;
 CREATE POLICY "wingas_admin_all" ON public.wingas
   FOR ALL USING (public.is_admin());
 
 -- Insert for registration
+DROP POLICY IF EXISTS "wingas_insert" ON public.wingas;
 CREATE POLICY "wingas_insert" ON public.wingas
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- ── Verification Payments ─────────────────────────────────────────────────
+DROP POLICY IF EXISTS "ver_payments_own" ON public.verification_payments;
 CREATE POLICY "ver_payments_own" ON public.verification_payments
   FOR SELECT USING (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "ver_payments_insert" ON public.verification_payments;
 CREATE POLICY "ver_payments_insert" ON public.verification_payments
   FOR INSERT WITH CHECK (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "ver_payments_admin" ON public.verification_payments;
 CREATE POLICY "ver_payments_admin" ON public.verification_payments
   FOR ALL USING (public.is_admin());
 
 -- ── Winga Documents ───────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "docs_own" ON public.winga_documents;
 CREATE POLICY "docs_own" ON public.winga_documents
   FOR ALL USING (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "docs_admin" ON public.winga_documents;
 CREATE POLICY "docs_admin" ON public.winga_documents
   FOR ALL USING (public.is_admin());
 
 -- ── Requests ──────────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "requests_customer_own" ON public.requests;
 CREATE POLICY "requests_customer_own" ON public.requests
   FOR ALL USING (auth.uid() = customer_id);
 
+DROP POLICY IF EXISTS "requests_winga_assigned" ON public.requests;
 CREATE POLICY "requests_winga_assigned" ON public.requests
   FOR SELECT USING (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "requests_winga_searching" ON public.requests;
 CREATE POLICY "requests_winga_searching" ON public.requests
   FOR SELECT USING (status = 'searching');
 
+DROP POLICY IF EXISTS "requests_winga_update" ON public.requests;
 CREATE POLICY "requests_winga_update" ON public.requests
   FOR UPDATE USING (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "requests_admin" ON public.requests;
 CREATE POLICY "requests_admin" ON public.requests
   FOR ALL USING (public.is_admin());
 
 -- ── Transactions ──────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "tx_customer" ON public.transactions;
 CREATE POLICY "tx_customer" ON public.transactions
   FOR SELECT USING (auth.uid() = customer_id);
+DROP POLICY IF EXISTS "tx_winga" ON public.transactions;
 CREATE POLICY "tx_winga" ON public.transactions
   FOR SELECT USING (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "tx_admin" ON public.transactions;
 CREATE POLICY "tx_admin" ON public.transactions
   FOR ALL USING (public.is_admin());
 
 -- ── Reviews ───────────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "reviews_public_read" ON public.reviews;
 CREATE POLICY "reviews_public_read"  ON public.reviews FOR SELECT USING (true);
+DROP POLICY IF EXISTS "reviews_customer_own" ON public.reviews;
 CREATE POLICY "reviews_customer_own" ON public.reviews
   FOR INSERT WITH CHECK (auth.uid() = customer_id);
+DROP POLICY IF EXISTS "reviews_admin" ON public.reviews;
 CREATE POLICY "reviews_admin" ON public.reviews FOR ALL USING (public.is_admin());
 
 -- ── Notifications ─────────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "notifs_own" ON public.notifications;
 CREATE POLICY "notifs_own" ON public.notifications
   FOR ALL USING (auth.uid() = user_id);
 
 -- ── Admin Audit Log ───────────────────────────────────────────────────────
+DROP POLICY IF EXISTS "audit_admin_only" ON public.admin_audit_log;
 CREATE POLICY "audit_admin_only" ON public.admin_audit_log
   FOR ALL USING (public.is_admin());
 
@@ -721,6 +749,14 @@ GRANT EXECUTE ON FUNCTION public.expire_subscriptions()                   TO ser
 --   2. public.users table (below) — with user_type = 'admin'
 -- ============================================================
 
+-- Clean up old credentials that block the user ID change
+DELETE FROM public.user_credentials WHERE user_id IN (
+  SELECT id FROM public.users WHERE phone = '+255000000000'
+);
+
+-- Clean up any existing user with this phone
+DELETE FROM public.users WHERE phone = '+255000000000';
+
 -- Grant admin access to support@winga.com
 INSERT INTO public.users (id, phone, email, name, user_type, is_verified)
 VALUES (
@@ -730,14 +766,7 @@ VALUES (
   'Winga Support',
   'admin',
   TRUE
-)
-ON CONFLICT (phone) DO UPDATE SET
-  id      = EXCLUDED.id,
-  email   = EXCLUDED.email,
-  name    = EXCLUDED.name,
-  user_type = EXCLUDED.user_type,
-  is_verified = EXCLUDED.is_verified;
-
+);
 
 -- Drop views first (safe re-run)
 DROP VIEW IF EXISTS public.v_dashboard_stats CASCADE;
@@ -908,29 +937,24 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ── Storage RLS Policies ──────────────────────────────────────────────────
 
--- Drop existing storage policies (storage schema survives DROP SCHEMA public CASCADE)
-DROP POLICY IF EXISTS "avatars_public_read"    ON storage.objects;
-DROP POLICY IF EXISTS "avatars_owner_upload"   ON storage.objects;
-DROP POLICY IF EXISTS "avatars_owner_delete"   ON storage.objects;
-DROP POLICY IF EXISTS "documents_owner_read"   ON storage.objects;
-DROP POLICY IF EXISTS "documents_owner_upload" ON storage.objects;
-DROP POLICY IF EXISTS "app_assets_public_read" ON storage.objects;
-DROP POLICY IF EXISTS "app_assets_admin_write" ON storage.objects;
-
 -- Avatars: public read, owner write
+DROP POLICY IF EXISTS "avatars_public_read" ON storage.objects;
 CREATE POLICY "avatars_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
 
+DROP POLICY IF EXISTS "avatars_owner_upload" ON storage.objects;
 CREATE POLICY "avatars_owner_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS "avatars_owner_delete" ON storage.objects;
 CREATE POLICY "avatars_owner_delete"
   ON storage.objects FOR DELETE
   USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- Documents: private — only owner and admin
+DROP POLICY IF EXISTS "documents_owner_read" ON storage.objects;
 CREATE POLICY "documents_owner_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'documents' AND (
@@ -938,15 +962,18 @@ CREATE POLICY "documents_owner_read"
     OR public.is_admin()
   ));
 
+DROP POLICY IF EXISTS "documents_owner_upload" ON storage.objects;
 CREATE POLICY "documents_owner_upload"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- App assets: public read, admin write
+DROP POLICY IF EXISTS "app_assets_public_read" ON storage.objects;
 CREATE POLICY "app_assets_public_read"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'app-assets');
 
+DROP POLICY IF EXISTS "app_assets_admin_write" ON storage.objects;
 CREATE POLICY "app_assets_admin_write"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'app-assets' AND public.is_admin());
@@ -1642,6 +1669,7 @@ ALTER TABLE public.messages REPLICA IDENTITY FULL;
 -- RLS
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "messages_participants" ON public.messages;
 CREATE POLICY "messages_participants" ON public.messages
   FOR ALL USING (
     request_id IN (
@@ -1650,6 +1678,7 @@ CREATE POLICY "messages_participants" ON public.messages
          OR winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
     )
   );
+DROP POLICY IF EXISTS "messages_admin" ON public.messages;
 CREATE POLICY "messages_admin" ON public.messages FOR ALL USING (public.is_admin());
 
 -- ════════════════════════════════════════════════════════════
@@ -1686,10 +1715,12 @@ GRANT SELECT ON public.v_winga_live_location TO authenticated;
 ALTER TABLE public.winga_locations REPLICA IDENTITY FULL;
 ALTER TABLE public.winga_locations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "wloc_winga_write" ON public.winga_locations;
 CREATE POLICY "wloc_winga_write" ON public.winga_locations
   FOR INSERT WITH CHECK (
     winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
   );
+DROP POLICY IF EXISTS "wloc_customer_read" ON public.winga_locations;
 CREATE POLICY "wloc_customer_read" ON public.winga_locations
   FOR SELECT USING (
     -- Customer can see location of Winga on their active request
@@ -1717,6 +1748,7 @@ CREATE TABLE IF NOT EXISTS public.preferred_wingas (
 CREATE INDEX IF NOT EXISTS idx_preferred_customer ON public.preferred_wingas(customer_id);
 
 ALTER TABLE public.preferred_wingas ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "preferred_own" ON public.preferred_wingas;
 CREATE POLICY "preferred_own" ON public.preferred_wingas
   FOR ALL USING (auth.uid() = customer_id);
 
@@ -1769,6 +1801,7 @@ CREATE INDEX IF NOT EXISTS idx_subs_status  ON public.substitutions(status, crea
 ALTER TABLE public.substitutions REPLICA IDENTITY FULL;
 ALTER TABLE public.substitutions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "subs_participants" ON public.substitutions;
 CREATE POLICY "subs_participants" ON public.substitutions
   FOR ALL USING (
     request_id IN (
@@ -1938,8 +1971,10 @@ CREATE INDEX IF NOT EXISTS idx_disputes_status  ON public.disputes(status, creat
 CREATE INDEX IF NOT EXISTS idx_disputes_winga   ON public.disputes(winga_id);
 
 ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "disputes_own" ON public.disputes;
 CREATE POLICY "disputes_own" ON public.disputes
   FOR ALL USING (auth.uid() = raised_by OR public.is_admin());
+DROP POLICY IF EXISTS "disputes_winga_view" ON public.disputes;
 CREATE POLICY "disputes_winga_view" ON public.disputes
   FOR SELECT USING (winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()));
 
@@ -2069,7 +2104,9 @@ CREATE TABLE IF NOT EXISTS public.tips (
 CREATE INDEX IF NOT EXISTS idx_tips_winga ON public.tips(winga_id);
 
 ALTER TABLE public.tips ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tips_customer_own" ON public.tips;
 CREATE POLICY "tips_customer_own" ON public.tips FOR ALL USING (auth.uid() = customer_id);
+DROP POLICY IF EXISTS "tips_winga_view" ON public.tips;
 CREATE POLICY "tips_winga_view"   ON public.tips FOR SELECT USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
 );
@@ -2118,12 +2155,14 @@ CREATE INDEX IF NOT EXISTS idx_list_items_list ON public.shopping_list_items(lis
 ALTER TABLE public.shopping_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shopping_list_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "list_participants" ON public.shopping_lists;
 CREATE POLICY "list_participants" ON public.shopping_lists
   FOR ALL USING (
     customer_id = auth.uid()
     OR request_id IN (SELECT id FROM public.requests WHERE
       winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()))
   );
+DROP POLICY IF EXISTS "list_items_via_list" ON public.shopping_list_items;
 CREATE POLICY "list_items_via_list" ON public.shopping_list_items
   FOR ALL USING (
     list_id IN (SELECT id FROM public.shopping_lists WHERE
@@ -2155,6 +2194,7 @@ CREATE INDEX IF NOT EXISTS idx_referrals_code     ON public.referrals(code);
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals(referrer_id);
 
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "referrals_own" ON public.referrals;
 CREATE POLICY "referrals_own" ON public.referrals
   FOR ALL USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
 
@@ -2245,13 +2285,17 @@ CREATE INDEX IF NOT EXISTS idx_blackout_date ON public.winga_blackout_dates(wing
 ALTER TABLE public.winga_availability    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.winga_blackout_dates  ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "avail_own" ON public.winga_availability;
 CREATE POLICY "avail_own"     ON public.winga_availability   FOR ALL USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()) OR public.is_admin()
 );
+DROP POLICY IF EXISTS "avail_public" ON public.winga_availability;
 CREATE POLICY "avail_public"  ON public.winga_availability   FOR SELECT USING (true);
+DROP POLICY IF EXISTS "blackout_own" ON public.winga_blackout_dates;
 CREATE POLICY "blackout_own"  ON public.winga_blackout_dates FOR ALL USING (
   winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid()) OR public.is_admin()
 );
+DROP POLICY IF EXISTS "blackout_pub" ON public.winga_blackout_dates;
 CREATE POLICY "blackout_pub"  ON public.winga_blackout_dates FOR SELECT USING (true);
 
 -- Is a Winga available right now?
@@ -2307,6 +2351,8 @@ ALTER TABLE public.requests      REPLICA IDENTITY FULL;
 ALTER TABLE public.substitutions REPLICA IDENTITY FULL;
 ALTER TABLE public.disputes      REPLICA IDENTITY FULL;
 ALTER TABLE public.tips          REPLICA IDENTITY FULL;
+
+
 -- ============================================================
 -- Winga App — Migration 010: Auto-Verification via Points
 --
@@ -2566,3 +2612,193 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.expire_subscriptions() TO service_role;
+
+-- ============================================================
+-- Migration 011: Fix RLS policies for PWA
+-- Fixes "permission denied for table requests" error
+-- Also ensures all PWA-required columns exist
+-- ============================================================
+
+-- ── Fix requests RLS: FOR ALL with only USING doesn't cover INSERT ──────────
+-- PostgreSQL: USING applies to SELECT/UPDATE/DELETE row filtering
+--             WITH CHECK applies to INSERT/UPDATE row creation
+-- The old policy "FOR ALL USING (auth.uid() = customer_id)" 
+-- does NOT allow INSERT because there's no WITH CHECK clause
+
+DROP POLICY IF EXISTS "requests_customer_own"    ON public.requests;
+DROP POLICY IF EXISTS "requests_winga_assigned"  ON public.requests;
+DROP POLICY IF EXISTS "requests_winga_searching" ON public.requests;
+DROP POLICY IF EXISTS "requests_winga_update"    ON public.requests;
+DROP POLICY IF EXISTS "requests_admin"           ON public.requests;
+
+-- Customer: full access to their own requests
+CREATE POLICY "requests_customer_select" ON public.requests
+  FOR SELECT USING (auth.uid() = customer_id);
+
+CREATE POLICY "requests_customer_insert" ON public.requests
+  FOR INSERT WITH CHECK (auth.uid() = customer_id);
+
+CREATE POLICY "requests_customer_update" ON public.requests
+  FOR UPDATE USING (auth.uid() = customer_id);
+
+-- Winga: see requests assigned to them OR open 'searching' requests  
+CREATE POLICY "requests_winga_view" ON public.requests
+  FOR SELECT USING (
+    status = 'searching'
+    OR winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
+  );
+
+-- Winga: update requests assigned to them (accept, shopping, complete)
+CREATE POLICY "requests_winga_update" ON public.requests
+  FOR UPDATE USING (
+    winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
+  ) WITH CHECK (
+    winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
+  );
+
+-- Admin: full access
+CREATE POLICY "requests_admin" ON public.requests
+  FOR ALL USING (public.is_admin());
+
+-- ── Fix wingas INSERT/UPDATE: PWA registers Wingas directly ──────────────────
+DROP POLICY IF EXISTS "wingas_insert"    ON public.wingas;
+DROP POLICY IF EXISTS "wingas_own"       ON public.wingas;
+DROP POLICY IF EXISTS "wingas_admin_all" ON public.wingas;
+
+-- Public: read active verified wingas
+CREATE POLICY "wingas_public_read" ON public.wingas
+  FOR SELECT USING (
+    status = 'active' AND verification_status = 'verified'
+    OR user_id = auth.uid()
+    OR public.is_admin()
+  );
+
+-- Winga: insert their own record
+CREATE POLICY "wingas_insert" ON public.wingas
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Winga: update their own record
+CREATE POLICY "wingas_own_update" ON public.wingas
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Admin: full access
+CREATE POLICY "wingas_admin" ON public.wingas
+  FOR ALL USING (public.is_admin());
+
+-- ── Fix users: allow upsert from PWA registration ────────────────────────────
+DROP POLICY IF EXISTS "users_insert"   ON public.users;
+DROP POLICY IF EXISTS "users_own_read" ON public.users;
+
+CREATE POLICY "users_own_read" ON public.users
+  FOR SELECT USING (auth.uid() = id OR public.is_admin());
+
+CREATE POLICY "users_insert" ON public.users
+  FOR INSERT WITH CHECK (true);  -- anyone can register
+
+CREATE POLICY "users_upsert" ON public.users
+  FOR UPDATE USING (auth.uid() = id);
+
+-- ── Ensure all columns exist (safe ADD COLUMN IF NOT EXISTS) ─────────────────
+
+-- requests: columns added in 009
+ALTER TABLE public.requests
+  ADD COLUMN IF NOT EXISTS location_id  UUID REFERENCES public.locations(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS city         TEXT,
+  ADD COLUMN IF NOT EXISTS area         TEXT,
+  ADD COLUMN IF NOT EXISTS request_lat  NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS request_lng  NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS total_price  INT;        -- alias for estimated_price, used by PWA
+
+-- wingas: columns added in 007, 009
+ALTER TABLE public.wingas
+  ADD COLUMN IF NOT EXISTS total_points    INT     NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS rated_trips     INT     NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS point_rate      NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS winga_score     NUMERIC(6,4) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS is_top_rated    BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS current_city    TEXT,
+  ADD COLUMN IF NOT EXISTS current_area    TEXT,
+  ADD COLUMN IF NOT EXISTS current_lat     NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS current_lng     NUMERIC(10,7),
+  ADD COLUMN IF NOT EXISTS bio             TEXT;
+
+-- users: wallet balance added in 009
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS wallet_balance INT NOT NULL DEFAULT 0;
+
+-- ── tips table (from 009) ────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.tips (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  request_id     UUID NOT NULL REFERENCES public.requests(id),
+  customer_id    UUID NOT NULL REFERENCES public.users(id),
+  winga_id       UUID NOT NULL REFERENCES public.wingas(id),
+  amount         INT NOT NULL CHECK (amount > 0),
+  payment_method TEXT NOT NULL DEFAULT 'wallet',
+  provider_ref   TEXT,
+  status         TEXT NOT NULL DEFAULT 'success',
+  message        TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uniq_tip_per_request UNIQUE (request_id)
+);
+
+ALTER TABLE public.tips ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tips_customer_own" ON public.tips;
+DROP POLICY IF EXISTS "tips_winga_view"   ON public.tips;
+CREATE POLICY "tips_customer_own" ON public.tips FOR ALL   USING (auth.uid() = customer_id);
+CREATE POLICY "tips_winga_view"   ON public.tips FOR SELECT USING (
+  winga_id IN (SELECT id FROM public.wingas WHERE user_id = auth.uid())
+);
+GRANT SELECT, INSERT ON public.tips TO authenticated;
+
+-- ── locations table (from 009) ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.locations (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  country     TEXT NOT NULL DEFAULT 'Tanzania',
+  region      TEXT NOT NULL,
+  city        TEXT NOT NULL,
+  area        TEXT,
+  lat         NUMERIC(10,7),
+  lng         NUMERIC(10,7),
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order  INT NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "locations_public" ON public.locations;
+CREATE POLICY "locations_public" ON public.locations FOR SELECT USING (is_active = TRUE);
+GRANT SELECT ON public.locations TO anon, authenticated;
+
+-- Seed Tanzania locations if empty
+INSERT INTO public.locations (country, region, city, area, lat, lng, sort_order)
+SELECT * FROM (VALUES
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Kariakoo',       -6.8161, 39.2894, 1),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Mwenge',          -6.7780, 39.2630, 2),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Mnazi Mmoja',     -6.8193, 39.2884, 3),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Ilala',           -6.8235, 39.2695, 4),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Kinondoni',       -6.7834, 39.2707, 5),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Temeke',          -6.8726, 39.2990, 6),
+  ('Tanzania','Dar es Salaam','Dar es Salaam','Tabata',          -6.8416, 39.2534, 7),
+  ('Tanzania','Arusha','Arusha','Arusha CBD',                   -3.3869, 36.6830, 10),
+  ('Tanzania','Kilimanjaro','Moshi','Moshi Market',              -3.3531, 37.3403, 20),
+  ('Tanzania','Mwanza','Mwanza','Mwanza Market',                 -2.5164, 32.9175, 30),
+  ('Tanzania','Dodoma','Dodoma','Dodoma Market',                 -6.1731, 35.7395, 40),
+  ('Tanzania','Zanzibar','Zanzibar City','Darajani Market',      -6.1622, 39.1894, 50),
+  ('Tanzania','Zanzibar','Zanzibar City','Stone Town',           -6.1630, 39.1900, 51)
+) AS t(country,region,city,area,lat,lng,sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM public.locations LIMIT 1);
+
+-- ── Grant permissions ─────────────────────────────────────────────────────────
+GRANT SELECT ON public.wingas    TO anon;
+GRANT SELECT ON public.wingas    TO authenticated;
+GRANT INSERT, UPDATE ON public.wingas    TO authenticated;
+GRANT SELECT ON public.requests  TO authenticated;
+GRANT INSERT, UPDATE ON public.requests  TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.users TO authenticated;
+GRANT SELECT ON public.verification_tiers TO anon, authenticated;
+GRANT SELECT ON public.locations TO anon, authenticated;
+
+-- ── rate_winga function grant (points RPC) ────────────────────────────────────
+GRANT EXECUTE ON FUNCTION public.rate_winga(UUID, INT, TEXT) TO authenticated;
+

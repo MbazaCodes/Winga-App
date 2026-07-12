@@ -87,7 +87,17 @@ export default function BookingScreen() {
         note: note.trim() || null,
         status: 'searching',
       })
-      if (dbError) throw dbError
+      if (dbError) {
+        // Common errors with helpful messages
+        if (dbError.message?.includes('permission denied')) {
+          setError('Hitilafu ya ruhusa. Tafadhali toka na uingie tena.')
+        } else if (dbError.message?.includes('violates foreign key')) {
+          setError('Tatizo la akaunti. Tafadhali toka na uingie tena.')
+        } else {
+          setError(dbError.message || 'Hitilafu imetokea. Jaribu tena.')
+        }
+        return
+      }
       nav('/requests', { state: { justBooked: true } })
     } catch (err: any) {
       setError(err.message || 'Hitilafu imetokea. Jaribu tena.')
