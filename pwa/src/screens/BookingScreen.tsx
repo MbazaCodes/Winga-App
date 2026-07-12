@@ -76,8 +76,16 @@ export default function BookingScreen() {
 
     setLoading(true)
     try {
+      // Use the real Supabase auth uid (required for RLS policies)
+      const { data: { user } } = await supabase.auth.getUser()
+      const authUid = user?.id || Session.uid()
+      if (!authUid) {
+        setError('Tafadhali ingia tena kwenye akaunti yako.')
+        return
+      }
+
       const { error: dbError } = await supabase.from('requests').insert({
-        customer_id: Session.uid(),
+        customer_id: authUid,
         category: selectedCategory,
         meeting_point: meetingPoint.trim(),
         shopping_area: shoppingArea.trim(),

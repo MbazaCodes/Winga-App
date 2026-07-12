@@ -120,7 +120,7 @@ export default function RequestsScreen() {
             winga:wingas!winga_id(id, name, winga_id, badge, rating),
             winga_points(request_id, point)`
         )
-        .eq('customer_id', Session.uid()!)
+        .eq('customer_id', (await supabase.auth.getUser()).data.user?.id || Session.uid() || '')
         .order('created_at', { ascending: false })
 
       if (err) throw err

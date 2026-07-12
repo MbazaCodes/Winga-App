@@ -49,6 +49,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <title>Winga App</title>
+  <script>
+    // Unregister any old service workers that might be serving stale cached files
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) { reg.unregister(); });
+        // If we unregistered anything, reload once to get fresh files
+        if (regs.length > 0) { window.location.reload(); }
+      });
+    }
+  </script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -61,30 +71,6 @@
     /* Smooth scrolling inside containers */
     .scroll { -webkit-overflow-scrolling: touch; overflow-y: auto; }
   </style>
-
-  <script>
-    // Force service worker to update and take control immediately
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        // If we have multiple registrations, clear old ones
-        if (registrations.length > 1) {
-          registrations.slice(0, -1).forEach(r => r.unregister());
-        }
-      });
-      // Force update check on every page load
-      navigator.serviceWorker.ready.then(function(reg) {
-        reg.update();
-      });
-      // When a new SW takes over, reload the page to get fresh content
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function() {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload();
-        }
-      });
-    }
-  </script>
 </head>
 <body>
   <div id="root"></div>
