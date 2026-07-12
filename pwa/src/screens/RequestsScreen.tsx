@@ -6,6 +6,7 @@ import { WingaBadge } from '../components/ui/Badge'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
 import { fmt } from '../lib/constants'
+import { useT } from '../lib/i18n'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -53,33 +54,37 @@ interface RequestRow {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-const STATUS_MAP: Record<string, { label: string; bg: string; color: string; emoji: string }> = {
-  searching:  { label: 'Inatafuta Winga...', bg: '#F3F4F6', color: '#6B7280', emoji: '🔍' },
-  accepted:   { label: 'Imekubaliwa',       bg: '#E3F2FD', color: '#1565C0', emoji: '✅' },
-  shopping:   { label: 'Winga Ananunua...',  bg: '#E8F5E9', color: '#2E7D32', emoji: '🛒' },
-  completed:  { label: 'Imekamilika',       bg: '#E8F5E9', color: '#1A5C2A', emoji: '✅' },
-  cancelled:  { label: 'Imehairishwa',      bg: '#FFEBEE', color: '#D32F2F', emoji: '❌' },
+function getStatusMap(t: (key: string, params?: Record<string, string>) => string) {
+  return {
+    searching:  { label: t('requests.searching'),  bg: '#F3F4F6', color: '#6B7280', emoji: '🔍' },
+    accepted:   { label: t('requests.accepted'),    bg: '#E3F2FD', color: '#1565C0', emoji: '✅' },
+    shopping:   { label: t('requests.shopping'),    bg: '#E8F5E9', color: '#2E7D32', emoji: '🛒' },
+    completed:  { label: t('requests.completedStatus'), bg: '#E8F5E9', color: '#1A5C2A', emoji: '✅' },
+    cancelled:  { label: t('requests.cancelledStatus'), bg: '#FFEBEE', color: '#D32F2F', emoji: '❌' },
+  } as Record<string, { label: string; bg: string; color: string; emoji: string }>
 }
 
-const SERVICE_TYPE_LABELS: Record<string, string> = {
-  hourly: 'Saa 1',
-  half_day: 'Nusu Siku',
-  full_day: 'Siku Nzima',
+function getServiceTypeLabels(t: (key: string, params?: Record<string, string>) => string) {
+  return {
+    hourly: t('booking.1hour'),
+    half_day: t('booking.halfDay'),
+    full_day: t('booking.fullDay'),
+  } as Record<string, string>
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: (key: string, params?: Record<string, string>) => string): string {
   const now = Date.now()
   const then = new Date(dateStr).getTime()
   const diffMs = now - then
   const mins = Math.floor(diffMs / 60000)
-  if (mins < 1) return 'Dakika 0 iliyopita'
-  if (mins < 60) return `${mins}m iliyopita`
+  if (mins < 1) return t('requests.justNow')
+  if (mins < 60) return t('requests.minutesAgo', { m: String(mins) })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h iliyopita`
+  if (hrs < 24) return t('requests.hoursAgo', { h: String(hrs) })
   const days = Math.floor(hrs / 24)
-  if (days < 30) return `${days}d iliyopita`
+  if (days < 30) return t('requests.daysAgo', { d: String(days) })
   const months = Math.floor(days / 30)
-  return `${months}mo iliyopita`
+  return t('requests.monthsAgo', { mo: String(months) })
 }
 
 /* ------------------------------------------------------------------ */
@@ -88,19 +93,13 @@ function timeAgo(dateStr: string): string {
 
 type TabKey = 'all' | 'active' | 'completed' | 'cancelled'
 
-const TABS = [
-  { key: 'all' as TabKey, label: 'Zote', statuses: [] as string[] },
-  { key: 'active' as TabKey, label: 'Inaendelea', statuses: ['searching', 'accepted', 'shopping'] },
-  { key: 'completed' as TabKey, label: 'Zilizokamilika', statuses: ['completed'] },
-  { key: 'cancelled' as TabKey, label: 'Zilizohairishwa', statuses: ['cancelled'] },
-]
-
 /* ------------------------------------------------------------------ */
 /*  Screen                                                             */
 /* ------------------------------------------------------------------ */
 
 export default function RequestsScreen() {
   const nav = useNavigate()
+  const t = useT()
 
   /* state */
   const [activeTab, setActiveTab] = useState<TabKey>('all')
@@ -118,6 +117,17 @@ export default function RequestsScreen() {
 
   /* Refresh interval ref */
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  /* Derived maps */
+  const STATUS_MAP = getStatusMap(t)
+  const SERVICE_TYPE_LABELS = getServiceTypeLabels(t)
+
+  const TABS = [
+    { key: 'all' as TabKey, label: t('requests.all'), statuses: [] as string[] },
+    { key: 'active' as TabKey, label: t('requests.active'), statuses: ['searching', 'accepted', 'shopping'] },
+    { key: 'completed' as TabKey, label: t('requests.completed'), statuses: ['completed'] },
+    { key: 'cancelled' as TabKey, label: t('requests.cancelled'), statuses: ['cancelled'] },
+  ]
 
   /* ---------------------------------------------------------------- */
   /*  Fetch requests                                                   */
@@ -152,11 +162,11 @@ export default function RequestsScreen() {
         setRequests(rows)
       }
     } catch (e: any) {
-      if (mounted.current) setError(e?.message || 'Imeshindwa kupakia safari')
+      if (mounted.current) setError(e?.message || t('requests.loadFailed'))
     } finally {
       if (mounted.current) setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     mounted.current = true
@@ -176,7 +186,7 @@ export default function RequestsScreen() {
   /* ---------------------------------------------------------------- */
 
   const filtered = requests.filter(r => {
-    const tab = TABS.find(t => t.key === activeTab)
+    const tab = TABS.find(tb => tb.key === activeTab)
     if (!tab || tab.statuses.length === 0) return true
     return tab.statuses.includes(r.status)
   })
@@ -204,7 +214,7 @@ export default function RequestsScreen() {
         fetchRequests()
       }, 1200)
     } catch (e: any) {
-      alert(e?.message || 'Imeshindwa kuwasilisha pima')
+      alert(e?.message || t('requests.submitFailed'))
       setSubmitting(false)
     }
   }
@@ -239,9 +249,9 @@ export default function RequestsScreen() {
     return (
       <div style={{ textAlign: 'center', paddingTop: 60, padding: '60px 24px' }}>
         <div style={{ fontSize: 56, marginBottom: 16 }}>📋</div>
-        <p style={{ fontFamily: 'Inter', fontSize: 17, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Huna safari bado</p>
+        <p style={{ fontFamily: 'Inter', fontSize: 17, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>{t('requests.noTrips')}</p>
         <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', marginBottom: 24 }}>
-          Omba Winga sasa na upate huduma bora
+          {t('requests.noTripsDesc')}
         </p>
         <button
           onClick={() => nav('/book')}
@@ -251,7 +261,7 @@ export default function RequestsScreen() {
             cursor: 'pointer',
           }}
         >
-          Omba Winga Sasa
+          {t('requests.requestNow')}
         </button>
       </div>
     )
@@ -315,7 +325,7 @@ export default function RequestsScreen() {
             {serviceLabel}
           </span>
           <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>{price}</span>
-          <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF', marginLeft: 'auto' }}>{timeAgo(r.created_at)}</span>
+          <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF', marginLeft: 'auto' }}>{timeAgo(r.created_at, t)}</span>
         </div>
 
         {/* ═══ WINGA INFO — shown for ALL active + completed states ═══ */}
@@ -378,10 +388,10 @@ export default function RequestsScreen() {
         {isActive && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, marginBottom: 4 }}>
             {[
-              { label: 'Ombi', done: true },
-              { label: 'Imekubaliwa', done: r.status !== 'searching' },
-              { label: 'Inanunua', done: r.status === 'shopping' },
-              { label: 'Imekamilika', done: false },
+              { label: t('requests.request'), done: true },
+              { label: t('requests.accepted'), done: r.status !== 'searching' },
+              { label: t('requests.shoppingShort'), done: r.status === 'shopping' },
+              { label: t('requests.completedStatus'), done: false },
             ].map((step, i, arr) => (
               <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
@@ -448,7 +458,7 @@ export default function RequestsScreen() {
               cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
             }}
           >
-            ⭐ Pima Huduma
+            ⭐ {t('requests.rateService')}
           </button>
         )}
 
@@ -458,7 +468,7 @@ export default function RequestsScreen() {
             marginTop: 10, padding: '8px 0', textAlign: 'center',
             fontFamily: 'Inter', fontSize: 12, color: '#9CA3AF',
           }}>
-            {r.winga_points!.point === 1 ? '👍 Umepima huduma: Nzuri' : '👎 Umepima huduma: Mbaya'}
+            {r.winga_points!.point === 1 ? t('requests.ratedGood') : t('requests.ratedBad')}
           </div>
         )}
       </div>
@@ -495,10 +505,10 @@ export default function RequestsScreen() {
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
               <p style={{ fontFamily: 'Inter', fontSize: 17, fontWeight: 600, color: '#1A1A1A', marginBottom: 4 }}>
-                Asante kwa pima yako!
+                {t('requests.thanksRating')}
               </p>
               <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280' }}>
-                Pima yako imewasilishwa
+                {t('requests.ratingSubmitted')}
               </p>
             </div>
           ) : (
@@ -508,11 +518,11 @@ export default function RequestsScreen() {
 
               {/* Title */}
               <h2 style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: '#1A1A1A', marginBottom: 4, textAlign: 'center' }}>
-                Jinsi gani ulipata huduma?
+                {t('requests.howWasService')}
               </h2>
               {ratingRequest.winga && (
                 <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 20 }}>
-                  Safari na {ratingRequest.winga.name}
+                  {t('requests.tripWith')} {ratingRequest.winga.name}
                 </p>
               )}
 
@@ -531,7 +541,7 @@ export default function RequestsScreen() {
                     fontFamily: 'Inter', fontSize: 13, fontWeight: 600,
                     color: goodService === true ? '#1A5C2A' : '#6B7280',
                   }}>
-                    Huduma Nzuri
+                    {t('requests.goodService')}
                   </span>
                 </button>
                 <button
@@ -547,7 +557,7 @@ export default function RequestsScreen() {
                     fontFamily: 'Inter', fontSize: 13, fontWeight: 600,
                     color: goodService === false ? '#D32F2F' : '#6B7280',
                   }}>
-                    Huduma Mbaya
+                    {t('requests.badService')}
                   </span>
                 </button>
               </div>
@@ -556,7 +566,7 @@ export default function RequestsScreen() {
               <textarea
                 value={remark}
                 onChange={e => setRemark(e.target.value)}
-                placeholder="Maoni yako (si lazima)"
+                placeholder={t('requests.feedbackPlaceholder')}
                 rows={3}
                 style={{
                   width: '100%', borderRadius: 12, border: '1px solid #E5E7EB', padding: '12px 14px',
@@ -576,7 +586,7 @@ export default function RequestsScreen() {
                   cursor: goodService === null || submitting ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'Inawasilisha...' : 'Wasilisha'}
+                {submitting ? t('common.submitting') : t('requests.submit')}
               </button>
             </>
           )}
@@ -593,7 +603,7 @@ export default function RequestsScreen() {
 
   return (
     <div className="page">
-      <AppBar title="Safari Zangu" />
+      <AppBar title={t('requests.myTrips')} />
 
       <div className="scroll" style={{ padding: '16px 16px 0', paddingBottom: 100 }}>
         {/* Tabs */}
@@ -634,7 +644,7 @@ export default function RequestsScreen() {
               onClick={fetchRequests}
               style={{ background: 'none', border: 'none', color: '#D32F2F', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter', fontSize: 13, marginTop: 4 }}
             >
-              Jaribu Tena
+              {t('requests.tryAgain')}
             </button>
           </div>
         )}

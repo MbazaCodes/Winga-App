@@ -5,6 +5,7 @@ import { Session } from '../lib/session'
 import BottomNav from '../components/layout/BottomNav'
 import { WingaBadge } from '../components/ui/Badge'
 import { CATEGORIES } from '../lib/constants'
+import { useT } from '../lib/i18n'
 
 interface WingaCard {
   id: string; name: string; specialty: string; badge: string
@@ -15,6 +16,7 @@ interface WingaCard {
 
 export default function HomeScreen() {
   const nav = useNavigate()
+  const t = useT()
   const [search, setSearch] = useState('')
   const [userName, setUserName] = useState('')
   const [wingas, setWingas] = useState<WingaCard[]>([])
@@ -23,7 +25,7 @@ export default function HomeScreen() {
   const mounted = useRef(true)
 
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Habari za Asubuhi' : hour < 17 ? 'Habari za Mchana' : 'Habari za Jioni'
+  const greeting = hour < 12 ? t('home.morning') : hour < 17 ? t('home.afternoon') : t('home.evening')
 
   useEffect(() => {
     mounted.current = true
@@ -110,7 +112,7 @@ export default function HomeScreen() {
           {/* Greeting */}
           <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', marginBottom: 2 }}>{greeting} 👋</p>
           <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 20 }}>
-            {userName ? `Karibu, ${userName}! 👋` : 'Karibu Winga App! 👋'}
+            {userName ? `${t('home.welcomeUser', { name: userName })} 👋` : `${t('home.welcome')} 👋`}
           </h2>
 
           {/* Hero — two CTAs */}
@@ -124,12 +126,12 @@ export default function HomeScreen() {
             }}>
               <div style={{ position: 'absolute', top: -15, right: -15, width: 70, height: 70, borderRadius: 50, background: 'rgba(255,255,255,0.05)' }} />
               <div style={{ fontSize: 28, marginBottom: 8 }}>🛒</div>
-              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Omba Winga</h3>
+              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{t('home.requestWinga')}</h3>
               <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: 10 }}>
-                Tuma ombi kwa Winga zote waliopo
+                {t('home.requestDesc')}
               </p>
               <div style={{ background: '#F9A825', color: '#1A1A1A', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter', fontSize: 12, fontWeight: 700 }}>
-                Omba →
+                {t('home.request')} →
               </div>
               {onlineCount > 0 && (
                 <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 8px', fontSize: 10, color: '#fff', fontFamily: 'Inter' }}>
@@ -147,12 +149,12 @@ export default function HomeScreen() {
             }}>
               <div style={{ position: 'absolute', top: -15, right: -15, width: 70, height: 70, borderRadius: 50, background: 'rgba(255,255,255,0.1)' }} />
               <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
-              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Gundua Wingas</h3>
+              <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{t('home.discoverWingas')}</h3>
               <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4, marginBottom: 10 }}>
-                Tazama na teua Winga wako
+                {t('home.discoverDesc')}
               </p>
               <div style={{ background: '#fff', color: '#F57F17', display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 14px', borderRadius: 8, fontFamily: 'Inter', fontSize: 12, fontWeight: 700 }}>
-                Gundua →
+                {t('home.discover')} →
               </div>
             </div>
           </div>
@@ -163,7 +165,7 @@ export default function HomeScreen() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Tafuta Winga au bidhaa..."
+              placeholder={t('home.searchPlaceholder')}
               style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'Inter', fontSize: 14, padding: '14px 0', background: 'transparent' }}
             />
             {search && (
@@ -175,9 +177,9 @@ export default function HomeScreen() {
           {!search && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>Kategoria za Safari</h3>
+                <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>{t('home.categories')}</h3>
                 <button onClick={() => nav('/safari?category=all')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                  Tazama Zote →
+                  {t('home.viewAll')} →
                 </button>
               </div>
               <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, marginBottom: 24, scrollbarWidth: 'none' }}>
@@ -196,9 +198,9 @@ export default function HomeScreen() {
           {!search && topWingas.length > 0 && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>⭐ Wingas Bora</h3>
+                <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>⭐ {t('home.topWingas')}</h3>
                 <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                  Gundua Zaidi →
+                  {t('home.discoverMore')} →
                 </button>
               </div>
               <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, marginBottom: 24, scrollbarWidth: 'none' }}>
@@ -208,8 +210,8 @@ export default function HomeScreen() {
                     <div style={{ width: 48, height: 48, borderRadius: 24, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 8 }}>👤</div>
                     <div style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{w.name.split(' ')[0]}</div>
                     <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#6B7280', marginBottom: 6, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{w.specialty}</div>
-                    <span style={{ background: '#F9A825', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ TOP</span>
-                    {w.is_online && <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 6, height: 6, borderRadius: 3, background: '#22C55E' }} /><span style={{ fontFamily: 'Inter', fontSize: 10, color: '#22C55E' }}>Mtandaoni</span></div>}
+                    <span style={{ background: '#F9A825', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ {t('home.top')}</span>
+                    {w.is_online && <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 6, height: 6, borderRadius: 3, background: '#22C55E' }} /><span style={{ fontFamily: 'Inter', fontSize: 10, color: '#22C55E' }}>{t('common.online')}</span></div>}
                   </div>
                 ))}
               </div>
@@ -221,10 +223,10 @@ export default function HomeScreen() {
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700 }}>
-              {search ? `Matokeo: "${search}"` : 'Wingas Waliopo'}
+              {search ? `${t('home.results')}: "${search}"` : t('home.availableWingas')}
             </h3>
             {!search && onlineCount > 0 && (
-              <span style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>{onlineCount} mtandaoni</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280' }}>{onlineCount} {t('home.online')}</span>
             )}
           </div>
 
@@ -236,11 +238,11 @@ export default function HomeScreen() {
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>{search ? '🔍' : '🛍️'}</div>
               <p style={{ fontFamily: 'Inter', fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-                {search ? `Hakuna Winga kwa "${search}"` : 'Hakuna Winga mtandaoni sasa hivi'}
+                {search ? `${t('home.noWingaFor')} "${search}"` : t('home.noOnlineWingas')}
               </p>
               {search
-                ? <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Tazama wote →</button>
-                : <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>Gundua Wingas Zote →</button>
+                ? <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>{t('home.viewAll2')} →</button>
+                : <button onClick={() => nav('/explore')} style={{ background: 'none', border: 'none', color: '#1A5C2A', fontFamily: 'Inter', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>{t('home.discoverAllWingas')} →</button>
               }
             </div>
           ) : (
@@ -261,8 +263,8 @@ export default function HomeScreen() {
                   </div>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     {w.rated_trips > 0 && <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#1A5C2A', fontWeight: 600 }}>👍 {Math.round((w.winga_score||0)*100)}%</span>}
-                    <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>{w.total_trips||0} safari</span>
-                    {w.is_top_rated && <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ TOP</span>}
+                    <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>{w.total_trips||0} {t('common.trips')}</span>
+                    {w.is_top_rated && <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ {t('home.top')}</span>}
                   </div>
                 </div>
                 <div style={{ color: '#D1D5DB', fontSize: 20, display: 'flex', alignItems: 'center' }}>›</div>

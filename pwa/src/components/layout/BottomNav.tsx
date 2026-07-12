@@ -1,24 +1,26 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Session } from '../../lib/session'
+import { useT } from '../../lib/i18n'
 
 const customerTabs = [
-  { path: '/home',     icon: '🏠', label: 'Nyumbani' },
-  { path: '/explore',  icon: '🔍', label: 'Gundua' },
-  { path: '/book',     icon: null, label: 'Omba' },
-  { path: '/messages', icon: '💬', label: 'Ujumbe' },
-  { path: '/profile',  icon: '👤', label: 'Wasifu' },
+  { path: '/home',     icon: '🏠', key: 'nav.home' },
+  { path: '/explore',  icon: '🔍', key: 'nav.discover' },
+  { path: '/book',     icon: null, key: 'nav.trips' },
+  { path: '/messages', icon: '💬', key: 'nav.messages' },
+  { path: '/profile',  icon: '👤', key: 'nav.profile' },
 ]
 const wingaTabs = [
-  { path: '/winga/home',     icon: '📊', label: 'Dashboard' },
-  { path: '/winga/requests', icon: '📋', label: 'Maombi' },
-  { path: '/book',           icon: null, label: 'Tafuta' },
-  { path: '/winga/earnings', icon: '💰', label: 'Mapato' },
-  { path: '/winga/profile',  icon: '👤', label: 'Wasifu' },
+  { path: '/winga/home',     icon: '📊', key: 'nav.home', label: 'Dashboard' },
+  { path: '/winga/requests', icon: '📋', key: 'nav.trips', label: 'Requests' },
+  { path: '/book',           icon: null, key: 'nav.trips', label: 'Search' },
+  { path: '/winga/earnings', icon: '💰', key: 'nav.trips', label: 'Earnings' },
+  { path: '/winga/profile',  icon: '👤', key: 'nav.profile', label: 'Profile' },
 ]
 
 export default function BottomNav() {
   const nav = useNavigate()
   const { pathname } = useLocation()
+  const t = useT()
   const tabs = Session.isWinga() ? wingaTabs : customerTabs
 
   return (
@@ -43,11 +45,12 @@ export default function BottomNav() {
             }}>+</div>
           </button>
         )
+        const label = tab.label || t(tab.key)
         return (
           <button key={tab.path} onClick={() => nav(tab.path)}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', WebkitTapHighlightColor: 'transparent' }}>
             <span style={{ fontSize: 20 }}>{tab.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, color: active ? '#1A5C2A' : '#9CA3AF', fontFamily: 'Inter' }}>{tab.label}</span>
+            <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, color: active ? '#1A5C2A' : '#9CA3AF', fontFamily: 'Inter' }}>{label}</span>
           </button>
         )
       })}

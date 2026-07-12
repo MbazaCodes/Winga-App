@@ -5,11 +5,13 @@ import { Session } from '../lib/session'
 import BottomNav from '../components/layout/BottomNav'
 import { fmt } from '../lib/constants'
 import { uploadProfilePhoto, pickPhoto } from '../lib/upload'
+import { useT } from '../lib/i18n'
 
 const C = { primary: '#1A5C2A', gold: '#F9A825', white: '#fff', bg: '#F8F9FA', textSec: '#6B7280', border: '#E5E7EB' }
 
 export default function ProfileScreen() {
   const nav = useNavigate()
+  const t = useT()
   const [name, setName]           = useState('')
   const [phone, setPhone]         = useState('')
   const [wallet, setWallet]       = useState(0)
@@ -67,7 +69,7 @@ export default function ProfileScreen() {
       await supabase.from('users').update({ profile_image_url: url }).eq('id', uid)
       if (mounted.current) setPhotoUrl(url)
     } catch (e: any) {
-      alert('Imeshindwa kupakia picha: ' + e.message)
+      alert(`${t('profile.uploadFailed')}: ` + e.message)
     }
     if (mounted.current) setUploadingPhoto(false)
   }
@@ -96,7 +98,7 @@ export default function ProfileScreen() {
       {/* Green header */}
       <div style={{ background: C.primary, paddingTop: 'env(safe-area-inset-top,0px)', flexShrink: 0 }}>
         <div style={{ padding: '20px 20px 28px' }}>
-          <h1 style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: C.white, marginBottom: 20 }}>Wasifu Wangu</h1>
+          <h1 style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: C.white, marginBottom: 20 }}>{t('profile.myProfile')}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {/* Profile photo */}
             <div style={{ position: 'relative', flexShrink: 0 }} onClick={handlePhotoChange}>
@@ -121,20 +123,20 @@ export default function ProfileScreen() {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={handleSaveName} disabled={savingName}
                       style={{ background: C.gold, border: 'none', borderRadius: 8, padding: '6px 14px', fontFamily: 'Inter', fontSize: 12, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer' }}>
-                      {savingName ? '...' : '✓ Hifadhi'}
+                      {savingName ? '...' : `✓ ${t('profile.save')}`}
                     </button>
                     <button onClick={() => { setEditingName(false); setNameInput(name) }}
-                      style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '6px 10px', color: C.white, cursor: 'pointer', fontFamily: 'Inter', fontSize: 12 }}>Ghairi</button>
+                      style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '6px 10px', color: C.white, cursor: 'pointer', fontFamily: 'Inter', fontSize: 12 }}>{t('profile.cancel')}</button>
                   </div>
                 </div>
               ) : (
                 <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{loading ? '...' : (name || 'Bonyeza kubadilisha jina')}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: C.white }}>{loading ? '...' : (name || t('profile.tapToChange'))}</div>
                     <span style={{ fontSize: 14, opacity: 0.7 }}>✏️</span>
                   </div>
                   <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>{phone}</div>
-                  <div style={{ marginTop: 8, background: C.gold, color: '#1A1A1A', fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 20, display: 'inline-block', fontFamily: 'Inter' }}>Mteja</div>
+                  <div style={{ marginTop: 8, background: C.gold, color: '#1A1A1A', fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 20, display: 'inline-block', fontFamily: 'Inter' }}>{t('profile.customer')}</div>
                 </div>
               )}
             </div>
@@ -146,9 +148,9 @@ export default function ProfileScreen() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, padding: '16px 16px 0' }}>
           {[
-            { icon: '🛍️', label: 'Safari', value: String(requests) },
-            { icon: '✅', label: 'Zilizokamilika', value: String(completed) },
-            { icon: '💰', label: 'Pochi', value: wallet > 0 ? fmt(wallet) : '0' },
+            { icon: '🛍️', label: t('profile.trips'), value: String(requests) },
+            { icon: '✅', label: t('profile.completed'), value: String(completed) },
+            { icon: '💰', label: t('profile.wallet'), value: wallet > 0 ? fmt(wallet) : '0' },
           ].map(s => (
             <div key={s.label} style={{ background: C.white, borderRadius: 14, padding: '12px 8px', textAlign: 'center', border: `1px solid ${C.border}` }}>
               <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
@@ -161,11 +163,11 @@ export default function ProfileScreen() {
         {/* Menu */}
         <div style={{ margin: '14px 16px 0', background: C.white, borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}` }}>
           {[
-            { icon: '📋', label: 'Safari Zangu',     sub: 'Maombi yako yote',          action: () => nav('/requests') },
-            { icon: '💳', label: 'Matumizi',          sub: 'Historia ya malipo',         action: () => nav('/earnings') },
-            { icon: '💬', label: 'Ujumbe',            sub: 'Mazungumzo na Wingas',       action: () => nav('/messages') },
-            { icon: '🎁', label: 'Alika Marafiki',   sub: 'Pata TZS 2,000 kwa rafiki', action: () => {} },
-            { icon: '🔔', label: 'Arifa',             sub: 'Mipangilio ya arifa',        action: () => {} },
+            { icon: '📋', label: t('profile.myTrips'), sub: t('profile.allRequests'), action: () => nav('/requests') },
+            { icon: '💳', label: t('profile.spending'), sub: t('profile.paymentHistory'), action: () => nav('/earnings') },
+            { icon: '💬', label: t('profile.messages'), sub: t('profile.wingaConvos'), action: () => nav('/messages') },
+            { icon: '🎁', label: t('profile.inviteFriends'), sub: t('profile.inviteDesc'), action: () => {} },
+            { icon: '🔔', label: t('profile.notifications'), sub: t('profile.notifSettings'), action: () => {} },
           ].map((item, i, arr) => (
             <div key={item.label} onClick={item.action}
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', cursor: 'pointer', borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : 'none', WebkitTapHighlightColor: 'transparent' }}>
@@ -181,11 +183,11 @@ export default function ProfileScreen() {
 
         {/* Become Winga CTA */}
         <div style={{ margin: '14px 16px 0', background: '#FFF8E1', border: '1px solid rgba(249,168,37,0.4)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#F57F17', marginBottom: 4 }}>🛍️ Ungependa Kuwa Winga?</div>
-          <div style={{ fontFamily: 'Inter', fontSize: 12, color: C.textSec, marginBottom: 12 }}>Chapisha TZS 12,000–32,000 kwa saa ukisaidia wateja kununua</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#F57F17', marginBottom: 4 }}>🛍️ {t('profile.wantWinga')}</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 12, color: C.textSec, marginBottom: 12 }}>{t('profile.earnText')}</div>
           <button onClick={() => nav('/winga-register')}
             style={{ background: '#F9A825', color: '#1A1A1A', border: 'none', borderRadius: 10, padding: '10px 20px', fontFamily: 'Inter', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-            Jiunge kama Winga →
+            {t('profile.joinAsWinga')} →
           </button>
         </div>
 
@@ -193,7 +195,7 @@ export default function ProfileScreen() {
         <div style={{ margin: '14px 16px' }}>
           <button onClick={handleLogout}
             style={{ width: '100%', height: 50, background: '#FFF5F5', color: C.primary === '#1A5C2A' ? '#D32F2F' : '#D32F2F', border: '1px solid #FECACA', borderRadius: 14, fontFamily: 'Inter', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
-            🚪 Toka kwenye Akaunti
+            🚪 {t('profile.logout')}
           </button>
         </div>
         <div style={{ textAlign: 'center', paddingBottom: 8 }}>

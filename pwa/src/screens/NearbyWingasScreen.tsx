@@ -5,6 +5,7 @@ import { Session } from '../lib/session'
 import { WingaBadge } from '../components/ui/Badge'
 import { CATEGORIES } from '../lib/constants'
 import BottomNav from '../components/layout/BottomNav'
+import { useT } from '../lib/i18n'
 
 interface WingaCard {
   id: string; name: string; specialty: string; badge: string
@@ -16,6 +17,7 @@ interface WingaCard {
 
 export default function NearbyWingasScreen() {
   const nav = useNavigate()
+  const t = useT()
   const [searchParams] = useSearchParams()
   const preselectedCategory = searchParams.get('category') || ''
 
@@ -138,7 +140,7 @@ export default function NearbyWingasScreen() {
         delivery_method: 'with_client',
         estimated_price: 15000,
         total_price: 15000,
-        note: `Ombi la moja kwa moja kwa ${w.name} (${w.winga_id})`,
+        note: `${t('requests.directRequest')} ${w.name} (${w.winga_id})`,
         status: 'accepted',
         accepted_at: new Date().toISOString(),
       })
@@ -170,18 +172,18 @@ export default function NearbyWingasScreen() {
         <div style={{ padding: '12px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: '#1A1A1A' }}>
-              🔍 Gundua Wingas
+              🔍 {t('nearby.title')}
             </h2>
             <div style={{ display: 'flex', gap: 4, background: '#F3F4F6', borderRadius: 10, padding: 3 }}>
               <button onClick={() => setViewMode('discover')}
                 style={{ padding: '6px 12px', border: 'none', borderRadius: 8, fontFamily: 'Inter', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                   background: viewMode === 'discover' ? '#1A5C2A' : 'transparent', color: viewMode === 'discover' ? '#fff' : '#6B7280', transition: 'all 0.2s' }}>
-                🃏 Kadi
+                🃏 {t('nearby.cards')}
               </button>
               <button onClick={() => setViewMode('list')}
                 style={{ padding: '6px 12px', border: 'none', borderRadius: 8, fontFamily: 'Inter', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                   background: viewMode === 'list' ? '#1A5C2A' : 'transparent', color: viewMode === 'list' ? '#fff' : '#6B7280', transition: 'all 0.2s' }}>
-                📋 Orodha
+                📋 {t('nearby.list')}
               </button>
             </div>
           </div>
@@ -191,7 +193,7 @@ export default function NearbyWingasScreen() {
             <span style={{ fontSize: 16, marginRight: 8 }}>🔍</span>
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Tafuta jina, eneo, au specialty..."
+              placeholder={t('nearby.searchPlaceholder')}
               style={{ flex: 1, border: 'none', outline: 'none', fontFamily: 'Inter', fontSize: 13, padding: '12px 0', background: 'transparent' }}
             />
             {search && (
@@ -205,7 +207,7 @@ export default function NearbyWingasScreen() {
           <button onClick={() => setActiveCategory('')}
             style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none', fontFamily: 'Inter', fontSize: 11, fontWeight: 600, cursor: 'pointer',
               background: !activeCategory ? '#1A5C2A' : '#F3F4F6', color: !activeCategory ? '#fff' : '#6B7280', transition: 'all 0.2s' }}>
-            Wote
+            {t('nearby.all')}
           </button>
           {CATEGORIES.map(cat => (
             <button key={cat.id} onClick={() => setActiveCategory(activeCategory === cat.id ? '' : cat.id)}
@@ -230,10 +232,10 @@ export default function NearbyWingasScreen() {
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🔍</div>
             <p style={{ fontFamily: 'Inter', fontSize: 15, color: '#6B7280', marginBottom: 6 }}>
-              {activeCategory ? 'Hakuna Winga kwa kategoria hii bado' : 'Hakuna Winga waliopo sasa hivi'}
+              {activeCategory ? t('nearby.noCategoryWingas') : t('nearby.noAvailableWingas')}
             </p>
             <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#9CA3AF' }}>
-              Jaribu tena baadaye au badilisha chujio
+              {t('nearby.tryLater')}
             </p>
           </div>
         ) : viewMode === 'discover' ? (
@@ -295,7 +297,7 @@ export default function NearbyWingasScreen() {
                       display: 'flex', alignItems: 'center', gap: 4,
                     }}>
                       <div style={{ width: 6, height: 6, borderRadius: 3, background: '#fff' }} />
-                      {currentWinga.is_online ? 'Mtandaoni' : 'Nje'}
+                      {currentWinga.is_online ? t('common.online') : t('common.offline')}
                     </div>
 
                     {/* Top Rated badge */}
@@ -305,7 +307,7 @@ export default function NearbyWingasScreen() {
                         background: '#F9A825', color: '#fff', padding: '4px 12px', borderRadius: 20,
                         fontFamily: 'Inter', fontSize: 11, fontWeight: 700,
                       }}>
-                        ⭐ TOP RATED
+                        ⭐ {t('nearby.topRated')}
                       </div>
                     )}
 
@@ -327,7 +329,7 @@ export default function NearbyWingasScreen() {
                       position: 'absolute', bottom: 12, left: 0, right: 0,
                       textAlign: 'center', fontFamily: 'Inter', fontSize: 11, color: 'rgba(255,255,255,0.7)',
                     }}>
-                      Bonyeza kuona wasifu kamili
+                      {t('nearby.tapViewProfile')}
                     </div>
                   </div>
 
@@ -371,19 +373,19 @@ export default function NearbyWingasScreen() {
                         <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#1A5C2A' }}>
                           {currentWinga.rated_trips > 0 ? `${Math.round((currentWinga.winga_score || 0) * 100)}%` : '—'}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>Ukadiriaji</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>{t('common.rating')}</div>
                       </div>
                       <div style={{ textAlign: 'center', flex: 1 }}>
                         <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>
                           {currentWinga.total_trips}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>Safari</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>{t('common.trips')}</div>
                       </div>
                       <div style={{ textAlign: 'center', flex: 1 }}>
                         <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: '#1A5C2A' }}>
                           {currentWinga.rated_trips}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>Makadirio</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 10, color: '#9CA3AF' }}>{t('common.ratings')}</div>
                       </div>
                     </div>
                   </div>
@@ -413,7 +415,7 @@ export default function NearbyWingasScreen() {
                   boxShadow: '0 4px 12px rgba(26,92,42,0.3)',
                   transition: 'all 0.2s',
                 }}>
-                {appointing ? '⏳ Inatuma...' : '🤝 Teua Winga Huu'}
+                {appointing ? `⏳ ${t('nearby.sendingRequest')}` : `🤝 ${t('nearby.selectWinga')}`}
               </button>
 
               <button onClick={goNext} disabled={currentIndex >= filteredWingas.length - 1}
@@ -427,7 +429,7 @@ export default function NearbyWingasScreen() {
             </div>
 
             <p style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF', marginTop: 12, textAlign: 'center' }}>
-              Teleka kadi kulia/kushoto au bonyeza kitufe
+              {t('nearby.swipeHint')}
             </p>
           </div>
         ) : (
@@ -435,10 +437,10 @@ export default function NearbyWingasScreen() {
           <div style={{ padding: '0 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280' }}>
-                {filteredWingas.length} Wingas waliopatikana
+                {filteredWingas.length} {t('nearby.wingasFound')}
               </span>
               <span style={{ fontFamily: 'Inter', fontSize: 12, color: '#22C55E', fontWeight: 600 }}>
-                🟢 {filteredWingas.filter(w => w.is_online).length} mtandaoni
+                🟢 {filteredWingas.filter(w => w.is_online).length} {t('home.online')}
               </span>
             </div>
 
@@ -481,10 +483,10 @@ export default function NearbyWingasScreen() {
                       </span>
                     )}
                     <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>
-                      {w.total_trips} safari
+                      {w.total_trips} {t('common.trips')}
                     </span>
                     {w.is_top_rated && (
-                      <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ TOP</span>
+                      <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ {t('home.top')}</span>
                     )}
                   </div>
                 </div>
@@ -507,6 +509,7 @@ export default function NearbyWingasScreen() {
 function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
   winga: WingaCard; onBack: () => void; onAppoint: () => void; appointing: boolean
 }) {
+  const t = useT()
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#F8F9FA' }}>
       {/* Header */}
@@ -520,7 +523,7 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
             width: 36, height: 36, borderRadius: 18, background: 'rgba(255,255,255,0.2)',
             border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>←</button>
-          <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#fff' }}>Wasifu wa Winga</span>
+          <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#fff' }}>{t('nearby.wingaProfile')}</span>
         </div>
 
         {/* Profile section */}
@@ -546,7 +549,7 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <WingaBadge badge={winga.badge} />
             {winga.is_top_rated && (
-              <span style={{ background: '#F9A825', color: '#fff', padding: '4px 12px', borderRadius: 20, fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>⭐ TOP RATED</span>
+              <span style={{ background: '#F9A825', color: '#fff', padding: '4px 12px', borderRadius: 20, fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>⭐ {t('nearby.topRated')}</span>
             )}
           </div>
         </div>
@@ -556,9 +559,9 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
         {/* Info cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
           {[
-            { label: 'Ukadiriaji', value: winga.rated_trips > 0 ? `${Math.round((winga.winga_score || 0) * 100)}%` : '—', icon: '⭐' },
-            { label: 'Safari', value: String(winga.total_trips), icon: '🛍️' },
-            { label: 'Makadirio', value: String(winga.rated_trips), icon: '👍' },
+            { label: t('common.rating'), value: winga.rated_trips > 0 ? `${Math.round((winga.winga_score || 0) * 100)}%` : '—', icon: '⭐' },
+            { label: t('common.trips'), value: String(winga.total_trips), icon: '🛍️' },
+            { label: t('common.ratings'), value: String(winga.rated_trips), icon: '👍' },
           ].map(s => (
             <div key={s.label} style={{ background: '#fff', borderRadius: 14, padding: '14px 12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
@@ -570,13 +573,13 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
 
         {/* Details */}
         <div style={{ background: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 12 }}>Taarifa</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 12 }}>{t('nearby.info')}</div>
 
           {[
             { label: 'Specialty', value: winga.specialty, icon: '🏷️' },
-            { label: 'Jiji', value: winga.current_city || '—', icon: '🏙️' },
-            { label: 'Eneo', value: winga.current_area || '—', icon: '📍' },
-            { label: 'Hali', value: winga.is_online ? 'Mtandaoni' : 'Nje', icon: winga.is_online ? '🟢' : '⚪' },
+            { label: winga.current_city, value: winga.current_city || '—', icon: '🏙️' },
+            { label: winga.current_area || '—', value: winga.current_area || '—', icon: '📍' },
+            { label: winga.is_online ? t('common.online') : t('common.offline'), value: winga.is_online ? t('common.online') : t('common.offline'), icon: winga.is_online ? '🟢' : '⚪' },
           ].map(item => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #F3F4F6' }}>
               <span style={{ fontSize: 18 }}>{item.icon}</span>
@@ -591,7 +594,7 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
         {/* Bio */}
         {winga.bio && (
           <div style={{ background: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>Kuhusu</div>
+            <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>{t('nearby.about')}</div>
             <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>{winga.bio}</p>
           </div>
         )}
@@ -616,11 +619,11 @@ function WingaProfileModal({ winga, onBack, onAppoint, appointing }: {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             boxShadow: '0 4px 16px rgba(26,92,42,0.3)',
           }}>
-          {appointing ? '⏳ Inatuma ombi...' : winga.is_online ? '🤝 Teua Winga Huu Sasa' : '⛔ Winga Huyu Hayuko Mtandaoni'}
+          {appointing ? `⏳ ${t('nearby.sendingRequest')}` : winga.is_online ? `🤝 ${t('nearby.selectNow')}` : `⛔ ${t('nearby.wingaOffline')}`}
         </button>
         {!winga.is_online && (
           <p style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 8 }}>
-            Winga huyu hayuko mtandaoni. Unaweza kutuma ombi la jumla litakalofikishwa apo atakapoingia.
+            {t('nearby.wingaOfflineDesc')}
           </p>
         )}
       </div>

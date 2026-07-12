@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
+import { useT } from '../lib/i18n'
 
 function cleanPhone(raw: string): string {
   return raw.replace(/[\s\-]/g, '').replace(/^(\+?00255|\+?255|0)/, '')
@@ -25,6 +26,7 @@ type LoginMethod = 'phone' | 'winga_id'
 
 export default function LoginScreen() {
   const nav = useNavigate()
+  const t = useT()
   const [step, setStep] = useState<Step>('phone')
   const [method, setMethod] = useState<LoginMethod>('phone')
   const [phone, setPhone] = useState('')
@@ -67,7 +69,7 @@ export default function LoginScreen() {
       const { data, error: rpcErr } = await supabase.rpc('lookup_winga_by_id', { p_winga_id: wid })
       if (rpcErr) throw rpcErr
       if (!data?.found) {
-        setError(`Winga ID "${wid}" haipatikani. Angalia na urudi tena.`)
+        setError(t('login.wingaIdNotFound', { id: wid }))
         setLoading(false)
         return
       }
@@ -86,7 +88,7 @@ export default function LoginScreen() {
       startCountdown()
       setLoading(false)
     } catch (e: any) {
-      if (mounted.current) setError(e.message || 'Hitilafu. Jaribu tena.')
+      if (mounted.current) setError(e.message || `${t('common.errorOccurred')} ${t('common.tryAgain')}`)
       setLoading(false)
     }
   }
@@ -101,7 +103,7 @@ export default function LoginScreen() {
       if (!isResend) setStep('otp')
       startCountdown()
     } catch (e: any) {
-      if (mounted.current) setError(e.message || 'Hitilafu imetokea. Jaribu tena.')
+      if (mounted.current) setError(e.message || `${t('common.errorOccurred')} ${t('common.tryAgain')}`)
     } finally {
       if (mounted.current) { setLoading(false); setResending(false) }
     }
@@ -117,7 +119,7 @@ export default function LoginScreen() {
       })
       if (e) throw e
       const uid = data.user?.id
-      if (!uid) throw new Error('Uthibitisho umeshindwa')
+      if (!uid) throw new Error(t('login.codeExpired'))
 
       const { data: existing } = await supabase
         .from('users').select('user_type, name').eq('id', uid).maybeSingle()
@@ -152,9 +154,9 @@ export default function LoginScreen() {
     } catch (e: any) {
       if (!mounted.current) return
       setError(
-        e.message?.includes('expired') ? 'Code imeisha muda. Tuma tena.' :
-        e.message?.includes('Invalid') ? 'Code si sahihi. Jaribu tena.' :
-        'Hitilafu imetokea. Jaribu tena.'
+        e.message?.includes('expired') ? t('login.codeExpired') :
+        e.message?.includes('Invalid') ? t('login.codeInvalid') :
+        `${t('common.errorOccurred')} ${t('common.tryAgain')}`
       )
       setLoading(false)
     }
@@ -195,18 +197,18 @@ export default function LoginScreen() {
       <div style={{ background: C.primary, padding: 'calc(env(safe-area-inset-top,0px) + 28px) 28px 28px', textAlign: 'center', flexShrink: 0 }}>
         <div style={{ width: 90, height: 90, margin: '0 auto 8px', borderRadius: 20, background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
           <img src="/winga-logo.png" alt="Winga" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none'; t.parentElement!.innerHTML = '<span style="font-size:40px">📍</span>'; }} />
+            onError={(e) => { const t2 = e.target as HTMLImageElement; t2.style.display = 'none'; t2.parentElement!.innerHTML = '<span style="font-size:40px">📍</span>'; }} />
         </div>
         <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 800, color: C.white, letterSpacing: 3 }}>WINGA</div>
         <div style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: C.gold, letterSpacing: 5 }}>APP</div>
-        <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>Mwongozo Wako wa Ununuzi Tanzania</div>
+        <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{t('login.tagline')}</div>
       </div>
 
       {/* ── PHONE ── */}
       {step === 'phone' && (
         <div style={{ flex: 1, padding: '24px 24px', overflowY: 'auto' }}>
-          <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: C.primary, marginBottom: 4 }}>Karibu! 👋</h2>
-          <p style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec, marginBottom: 16 }}>Ingiza namba yako au Winga ID — tutatuma code ya OTP bure</p>
+          <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: C.primary, marginBottom: 4 }}>{t('login.welcome')} 👋</h2>
+          <p style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec, marginBottom: 16 }}>{t('login.subtitle')}</p>
 
           {/* Method tabs */}
           <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: '#F3F4F6', borderRadius: 12, padding: 4 }}>
@@ -219,7 +221,7 @@ export default function LoginScreen() {
                 fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 transition: 'all 0.2s',
               }}>
-              📱 Namba ya Simu
+              📱 {t('login.phoneNumber')}
             </button>
             <button
               onClick={() => setMethod('winga_id')}
@@ -230,7 +232,7 @@ export default function LoginScreen() {
                 fontFamily: 'Inter', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 transition: 'all 0.2s',
               }}>
-              🪪 Winga ID
+              🪪 {t('login.wingaId')}
             </button>
           </div>
 
@@ -239,7 +241,7 @@ export default function LoginScreen() {
           {/* ── Phone input ── */}
           {method === 'phone' && (
             <>
-              <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Namba ya Simu *</label>
+              <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>{t('login.phoneNumber')} *</label>
               <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
                 <div style={{ background: C.primarySurface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '13px 12px', fontFamily: 'Inter', fontWeight: 600, fontSize: 14, color: C.primary, whiteSpace: 'nowrap' }}>🇹🇿 +255</div>
                 <input value={phone} onChange={e => { setPhone(e.target.value); setError('') }}
@@ -247,10 +249,10 @@ export default function LoginScreen() {
                   onKeyDown={e => e.key === 'Enter' && clean.length >= 9 && sendOtp()}
                   style={{ flex: 1, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: '13px 14px', fontSize: 16, fontFamily: 'Inter', outline: 'none' }} />
               </div>
-              <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec, marginBottom: 20 }}>Bila +255 au 0 mwanzoni</p>
+              <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec, marginBottom: 20 }}>{t('login.phoneHint')}</p>
               <button onClick={() => sendOtp()} disabled={loading || clean.length < 9}
                 style={{ width: '100%', height: 52, background: clean.length >= 9 ? C.primary : '#9CA3AF', color: C.white, border: 'none', borderRadius: 14, fontFamily: 'Inter', fontSize: 16, fontWeight: 600, cursor: clean.length >= 9 ? 'pointer' : 'not-allowed', marginBottom: 16 }}>
-                {loading ? '⏳ Inatuma...' : 'Pata Code ya OTP →'}
+                {loading ? `⏳ ${t('login.sending')}` : `${t('login.getOtp')} →`}
               </button>
             </>
           )}
@@ -258,7 +260,7 @@ export default function LoginScreen() {
           {/* ── Winga ID input ── */}
           {method === 'winga_id' && (
             <>
-              <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Winga ID *</label>
+              <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>{t('login.wingaId')} *</label>
               <input
                 value={wingaIdInput}
                 onChange={e => { setWingaIdInput(e.target.value.toUpperCase()); setError('') }}
@@ -274,21 +276,21 @@ export default function LoginScreen() {
                 }}
               />
               <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.textSec, marginBottom: 20 }}>
-                Winga ID inaanza na "WNGA" ikifuatiwa na namba 5. Tutakutumia OTP kwa namba yako iliyosajiliwa.
+                {t('login.wingaIdHint')}
               </p>
               <button onClick={loginWithWingaId} disabled={loading || !wingaIdValid}
                 style={{ width: '100%', height: 52, background: wingaIdValid ? C.primary : '#9CA3AF', color: C.white, border: 'none', borderRadius: 14, fontFamily: 'Inter', fontSize: 16, fontWeight: 600, cursor: wingaIdValid ? 'pointer' : 'not-allowed', marginBottom: 16 }}>
-                {loading ? '⏳ Inatafuta...' : 'Ingia kwa Winga ID →'}
+                {loading ? t('login.searching') : t('login.loginWithWingaId')}
               </button>
             </>
           )}
 
           <div style={{ background: C.primarySurface, borderRadius: 12, padding: 12, marginBottom: 20, display: 'flex', gap: 8 }}>
-            <span>🔒</span><span style={{ fontFamily: 'Inter', fontSize: 12, color: C.primary }}>SMS ya OTP ni ya bure na salama kabisa.</span>
+            <span>🔒</span><span style={{ fontFamily: 'Inter', fontSize: 12, color: C.primary }}>{t('login.otpSafe')}</span>
           </div>
           <div style={{ textAlign: 'center' }}>
             <button onClick={() => nav('/winga-register')} style={{ background: 'none', border: 'none', fontFamily: 'Inter', fontSize: 14, color: C.textSec, cursor: 'pointer' }}>
-              Ungependa kuwa Winga? <span style={{ color: C.primary, fontWeight: 600 }}>Jiunge hapa →</span>
+              {t('login.wantWinga')} <span style={{ color: C.primary, fontWeight: 600 }}>{t('login.joinHere')} →</span>
             </button>
           </div>
         </div>
@@ -299,9 +301,9 @@ export default function LoginScreen() {
         <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
           <button onClick={() => { setStep('phone'); setOtp(['', '', '', '', '', '']); setError('') }}
             style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', marginBottom: 16, padding: 0 }}>←</button>
-          <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Ingiza Code ya OTP</h2>
+          <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{t('login.enterOtp')}</h2>
           <p style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec, marginBottom: 24 }}>
-            Tumetuma SMS kwenda <strong style={{ color: C.primary }}>+255 {phone}</strong>
+            {t('login.sentTo')} <strong style={{ color: C.primary }}>+255 {phone}</strong>
           </p>
           {error && <div style={{ background: C.errorBg, color: C.error, padding: 12, borderRadius: 12, marginBottom: 16, fontFamily: 'Inter', fontSize: 13 }}>⚠️ {error}</div>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
@@ -314,15 +316,15 @@ export default function LoginScreen() {
           </div>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             {countdown > 0
-              ? <span style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec }}>Tuma tena baada ya 00:{String(countdown).padStart(2, '0')}</span>
+              ? <span style={{ fontFamily: 'Inter', fontSize: 13, color: C.textSec }}>{t('login.resendAfter')} 00:{String(countdown).padStart(2, '0')}</span>
               : <button onClick={() => sendOtp(true)} disabled={resending}
                 style={{ background: 'none', border: 'none', color: C.primary, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter', fontSize: 13 }}>
-                {resending ? '⏳...' : '🔄 Tuma Code Tena'}
+                {resending ? '⏳...' : `🔄 ${t('login.resendCode')}`}
               </button>}
           </div>
           <button onClick={verifyOtp} disabled={loading || otp.join('').length < 6}
             style={{ width: '100%', height: 52, background: otp.join('').length === 6 ? C.primary : '#9CA3AF', color: C.white, border: 'none', borderRadius: 14, fontFamily: 'Inter', fontSize: 16, fontWeight: 600, cursor: otp.join('').length === 6 ? 'pointer' : 'not-allowed' }}>
-            {loading ? '⏳ Inathibitisha...' : 'Thibitisha na Endelea →'}
+            {loading ? `⏳ ${t('login.verifying')}` : `${t('login.verifyContinue')} →`}
           </button>
         </div>
       )}
@@ -333,13 +335,13 @@ export default function LoginScreen() {
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
             <h2 style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-              {pendingUid ? 'Karibu Winga App!' : 'Jina Lako'}
+              {pendingUid ? t('login.welcomeApp') : t('login.yourName')}
             </h2>
             <p style={{ fontFamily: 'Inter', fontSize: 14, color: C.textSec }}>
-              Ingiza jina lako halisi. Wingas watakujua kwa jina hili.
+              {t('login.enterRealName')}. {t('login.wingasWillKnow')}.
             </p>
           </div>
-          <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>Jina Lako Kamili</label>
+          <label style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>{t('login.yourFullName')}</label>
           <input
             value={newName} onChange={e => setNewName(e.target.value)}
             type="text" autoFocus placeholder="Mfano: David Mbazza"
@@ -347,10 +349,10 @@ export default function LoginScreen() {
             style={{ width: '100%', border: `1.5px solid ${newName.trim().length >= 2 ? C.primary : C.border}`, borderRadius: 12, padding: '14px 16px', fontSize: 16, fontFamily: 'Inter', outline: 'none', marginBottom: 20, boxSizing: 'border-box' }} />
           <button onClick={saveName}
             style={{ width: '100%', height: 52, background: C.primary, color: C.white, border: 'none', borderRadius: 14, fontFamily: 'Inter', fontSize: 16, fontWeight: 600, cursor: 'pointer', marginBottom: 12 }}>
-            {newName.trim().length >= 2 ? 'Hifadhi na Endelea →' : 'Ruka kwa sasa →'}
+            {newName.trim().length >= 2 ? `${t('login.saveContinue')} →` : `${t('login.skipForNow')} →`}
           </button>
           <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.textSec, textAlign: 'center' }}>
-            Unaweza kubadilisha jina lako kwenye Wasifu wako baadaye.
+            {t('login.canChangeName')}
           </p>
         </div>
       )}

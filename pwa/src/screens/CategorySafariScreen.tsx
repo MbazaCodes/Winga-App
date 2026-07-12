@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { WingaBadge } from '../components/ui/Badge'
 import { CATEGORIES } from '../lib/constants'
 import BottomNav from '../components/layout/BottomNav'
+import { useT } from '../lib/i18n'
 
 interface WingaCard {
   id: string; name: string; specialty: string; badge: string
@@ -15,6 +16,7 @@ interface WingaCard {
 
 export default function CategorySafariScreen() {
   const nav = useNavigate()
+  const t = useT()
   const [searchParams] = useSearchParams()
   const categoryId = searchParams.get('category') || 'all'
 
@@ -76,7 +78,7 @@ export default function CategorySafariScreen() {
         delivery_method: 'with_client',
         estimated_price: 15000,
         total_price: 15000,
-        note: `Ombi la moja kwa moja kwa ${w.name} (${w.winga_id})`,
+        note: `${t('requests.directRequest')} ${w.name} (${w.winga_id})`,
         status: 'accepted',
         accepted_at: new Date().toISOString(),
       })
@@ -104,7 +106,7 @@ export default function CategorySafariScreen() {
               width: 36, height: 36, borderRadius: 18, background: 'rgba(255,255,255,0.2)',
               border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>←</button>
-            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#fff' }}>Wasifu wa Winga</span>
+            <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, color: '#fff' }}>{t('nearby.wingaProfile')}</span>
           </div>
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 10 }}>
             <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -119,16 +121,16 @@ export default function CategorySafariScreen() {
             <div style={{ fontFamily: 'Inter', fontSize: 11, color: '#F9A825', fontWeight: 600, marginTop: 2 }}>{selectedWinga.winga_id}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <WingaBadge badge={selectedWinga.badge} />
-              {selectedWinga.is_top_rated && <span style={{ background: '#F9A825', color: '#fff', padding: '3px 10px', borderRadius: 20, fontFamily: 'Inter', fontSize: 10, fontWeight: 700 }}>⭐ TOP</span>}
+              {selectedWinga.is_top_rated && <span style={{ background: '#F9A825', color: '#fff', padding: '3px 10px', borderRadius: 20, fontFamily: 'Inter', fontSize: 10, fontWeight: 700 }}>⭐ {t('home.top')}</span>}
             </div>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 120px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
             {[
-              { l: 'Ukadiriaji', v: selectedWinga.rated_trips > 0 ? `${Math.round((selectedWinga.winga_score||0)*100)}%` : '—', i: '⭐' },
-              { l: 'Safari', v: String(selectedWinga.total_trips), i: '🛍️' },
-              { l: 'Makadirio', v: String(selectedWinga.rated_trips), i: '👍' },
+              { l: t('common.rating'), v: selectedWinga.rated_trips > 0 ? `${Math.round((selectedWinga.winga_score||0)*100)}%` : '—', i: '⭐' },
+              { l: t('common.trips'), v: String(selectedWinga.total_trips), i: '🛍️' },
+              { l: t('common.ratings'), v: String(selectedWinga.rated_trips), i: '👍' },
             ].map(s => (
               <div key={s.l} style={{ background: '#fff', borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize: 18, marginBottom: 2 }}>{s.i}</div>
@@ -154,7 +156,7 @@ export default function CategorySafariScreen() {
           </div>
           {selectedWinga.bio && (
             <div style={{ background: '#fff', borderRadius: 16, padding: 16, marginTop: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>Kuhusu</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>{t('nearby.about')}</div>
               <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>{selectedWinga.bio}</p>
             </div>
           )}
@@ -162,7 +164,7 @@ export default function CategorySafariScreen() {
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)', background: '#fff', borderTop: '1px solid #F3F4F6', boxShadow: '0 -4px 16px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <button onClick={() => appointWinga(selectedWinga)} disabled={!!appointing || !selectedWinga.is_online}
             style={{ width: '100%', height: 54, background: appointing || !selectedWinga.is_online ? '#9CA3AF' : '#1A5C2A', color: '#fff', border: 'none', borderRadius: 14, fontFamily: 'Inter', fontSize: 16, fontWeight: 700, cursor: appointing || !selectedWinga.is_online ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(26,92,42,0.3)' }}>
-            {appointing === selectedWinga.id ? '⏳ Inatuma...' : selectedWinga.is_online ? '🤝 Teua Winga Huu' : '⛔ Nje ya Mtandao'}
+            {appointing === selectedWinga.id ? `⏳ ${t('nearby.sendingRequest')}` : selectedWinga.is_online ? `🤝 ${t('nearby.selectWinga')}` : `⛔ ${t('nearby.offlineBtn')}`}
           </button>
         </div>
       </div>
@@ -184,10 +186,10 @@ export default function CategorySafariScreen() {
             }}>←</button>
             <div>
               <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {category ? `${category.icon} ${category.name}` : '🌍 Wote'} Safari
+                {category ? `${category.icon} ${category.name}` : `🌍 ${t('common.all')}`} {t('common.trips')}
               </div>
               <div style={{ fontFamily: 'Inter', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                {wingas.length} Wingas {onlineCount > 0 && `· 🟢 ${onlineCount} mtandaoni`}
+                {wingas.length} Wingas {onlineCount > 0 && `· 🟢 ${onlineCount} ${t('home.online')}`}
               </div>
             </div>
           </div>
@@ -195,9 +197,9 @@ export default function CategorySafariScreen() {
           {/* Sort options */}
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { key: 'online' as const, label: '🟢 Mtandaoni' },
+              { key: 'online' as const, label: `🟢 ${t('common.online')}` },
               { key: 'rating' as const, label: '⭐ Bora' },
-              { key: 'trips' as const, label: '🛍️ Safari Nyingi' },
+              { key: 'trips' as const, label: `🛍️ ${t('common.trips')} Nyingi` },
             ].map(s => (
               <button key={s.key} onClick={() => setSortBy(s.key)}
                 style={{
@@ -224,10 +226,10 @@ export default function CategorySafariScreen() {
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>{category ? category.icon : '🔍'}</div>
             <p style={{ fontFamily: 'Inter', fontSize: 15, color: '#6B7280' }}>
-              Hakuna Winga wa {category?.name || 'hii kategoria'} bado
+              {t('nearby.noCategoryWingas')}
             </p>
             <p style={{ fontFamily: 'Inter', fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
-              Angalia tena baadaye
+              {t('nearby.tryLater')}
             </p>
           </div>
         ) : (
@@ -263,9 +265,9 @@ export default function CategorySafariScreen() {
                   </div>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {w.rated_trips > 0 && <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#1A5C2A', fontWeight: 600 }}>👍 {Math.round((w.winga_score||0)*100)}%</span>}
-                    <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>{w.total_trips} safari</span>
-                    {w.is_top_rated && <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ TOP</span>}
-                    {w.is_online && <span style={{ background: '#E8F5E9', color: '#22C55E', fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 20, fontFamily: 'Inter' }}>🟢 Mtandaoni</span>}
+                    <span style={{ fontFamily: 'Inter', fontSize: 11, color: '#9CA3AF' }}>{w.total_trips} {t('common.trips')}</span>
+                    {w.is_top_rated && <span style={{ background: '#FFF8E1', color: '#F57F17', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 20, fontFamily: 'Inter' }}>⭐ {t('home.top')}</span>}
+                    {w.is_online && <span style={{ background: '#E8F5E9', color: '#22C55E', fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 20, fontFamily: 'Inter' }}>🟢 {t('common.online')}</span>}
                   </div>
                 </div>
                 <div style={{ color: '#D1D5DB', fontSize: 20, display: 'flex', alignItems: 'center' }}>›</div>

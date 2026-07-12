@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { LangToggle } from '../../lib/i18n'
 
 interface AppBarProps {
   title: string
@@ -27,7 +28,10 @@ export default function AppBar({ title, back, action, transparent }: AppBarProps
       <h1 style={{ flex: 1, textAlign: 'center', fontFamily: 'Inter', fontSize: 17, fontWeight: 600, color: '#1A1A1A' }}>
         {title}
       </h1>
-      <div style={{ width: back ? 40 : 0 }}>{action}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: back ? 100 : 60, justifyContent: 'flex-end' }}>
+        {action}
+        <LangToggle />
+      </div>
     </header>
   )
 }

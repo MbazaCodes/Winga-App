@@ -5,19 +5,20 @@ import BottomNav from '../components/layout/BottomNav'
 import { supabase } from '../lib/supabase'
 import { Session } from '../lib/session'
 import { CATEGORIES, fmt } from '../lib/constants'
+import { useT } from '../lib/i18n'
 
 // Keys MUST match DB CHECK constraint: 'hourly','half_day','full_day'
 const SERVICE_TYPES = [
-  { key: 'hourly' as const, label: 'Saa 1', price: 15000 },
-  { key: 'half_day' as const, label: 'Nusu Siku', price: 25000 },
-  { key: 'full_day' as const, label: 'Siku Nzima', price: 40000 },
+  { key: 'hourly' as const, labelKey: 'booking.1hour', price: 15000 },
+  { key: 'half_day' as const, labelKey: 'booking.halfDay', price: 25000 },
+  { key: 'full_day' as const, labelKey: 'booking.fullDay', price: 40000 },
 ]
 
 
 const DELIVERY_METHODS = [
-  { key: 'with_client' as const, label: 'Na Mteja', emoji: '🚶' },
-  { key: 'deliver' as const, label: 'Tunawasilisha', emoji: '🛵' },
-  { key: 'pickup' as const, label: 'Pickup', emoji: '📍' },
+  { key: 'with_client' as const, labelKey: 'booking.withCustomer', emoji: '🚶' },
+  { key: 'deliver' as const, labelKey: 'booking.weDeliver', emoji: '🛵' },
+  { key: 'pickup' as const, labelKey: 'booking.weDeliver', emoji: '📍' },
 ]
 
 const section: React.CSSProperties = {
@@ -53,6 +54,7 @@ const inputStyle: React.CSSProperties = {
 
 export default function BookingScreen() {
   const nav = useNavigate()
+  const t = useT()
 
   const [selectedCategory, setSelectedCategory] = useState('')
   const [meetingPoint, setMeetingPoint] = useState('')
@@ -68,11 +70,11 @@ export default function BookingScreen() {
   async function handleSubmit() {
     setError('')
 
-    if (!selectedCategory) return setError('Tafadhali chagua kategoria.')
-    if (!meetingPoint.trim()) return setError('Tafadhali weka mahali pa kukutana.')
-    if (!shoppingArea.trim()) return setError('Tafadhali weka eneo la manunuzi.')
-    if (!selectedServiceType) return setError('Tafadhali chagua aina ya huduma.')
-    if (!selectedDelivery) return setError('Tafadhali chagua njia ya upoaji.')
+    if (!selectedCategory) return setError(t('booking.selectCategory'))
+    if (!meetingPoint.trim()) return setError(t('booking.enterMeetingPoint'))
+    if (!shoppingArea.trim()) return setError(t('booking.enterShoppingArea'))
+    if (!selectedServiceType) return setError(t('booking.selectServiceType'))
+    if (!selectedDelivery) return setError(t('booking.selectDeliveryMethod'))
 
     setLoading(true)
     try {
@@ -80,7 +82,7 @@ export default function BookingScreen() {
       const { data: { user } } = await supabase.auth.getUser()
       const authUid = user?.id || Session.uid()
       if (!authUid) {
-        setError('Tafadhali ingia tena kwenye akaunti yako.')
+        setError(t('booking.pleaseLogin'))
         return
       }
 
@@ -99,17 +101,17 @@ export default function BookingScreen() {
       if (dbError) {
         // Common errors with helpful messages
         if (dbError.message?.includes('permission denied')) {
-          setError('Hitilafu ya ruhusa. Tafadhali toka na uingie tena.')
+          setError(t('booking.permissionError'))
         } else if (dbError.message?.includes('violates foreign key')) {
-          setError('Tatizo la akaunti. Tafadhali toka na uingie tena.')
+          setError(t('booking.accountError'))
         } else {
-          setError(dbError.message || 'Hitilafu imetokea. Jaribu tena.')
+          setError(dbError.message || `${t('common.errorOccurred')} ${t('common.tryAgain')}`)
         }
         return
       }
       nav('/requests', { state: { justBooked: true } })
     } catch (err: any) {
-      setError(err.message || 'Hitilafu imetokea. Jaribu tena.')
+      setError(err.message || `${t('common.errorOccurred')} ${t('common.tryAgain')}`)
     } finally {
       setLoading(false)
     }
@@ -117,12 +119,12 @@ export default function BookingScreen() {
 
   return (
     <div className="page">
-      <AppBar title="Omba Winga" back={true} />
+      <AppBar title={t('booking.title')} back={true} />
 
       <div className="scroll" style={{ padding: '16px 20px 100px' }}>
         {/* Category */}
         <div style={section}>
-          <label style={labelStyle}>Kategoria</label>
+          <label style={labelStyle}>{t('booking.category')}</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {CATEGORIES.map(cat => {
               const active = selectedCategory === cat.sw
@@ -162,7 +164,7 @@ export default function BookingScreen() {
 
         {/* Meeting Point */}
         <div style={section}>
-          <label style={labelStyle}>Mahali pa Kukutana</label>
+          <label style={labelStyle}>{t('booking.meetingPoint')}</label>
           <input
             style={inputStyle}
             placeholder="E.g. Mlimani City, Posta"
@@ -173,7 +175,7 @@ export default function BookingScreen() {
 
         {/* Shopping Area */}
         <div style={section}>
-          <label style={labelStyle}>Eneo la Manunuzi</label>
+          <label style={labelStyle}>{t('booking.shoppingArea')}</label>
           <input
             style={inputStyle}
             value={shoppingArea}
@@ -183,7 +185,7 @@ export default function BookingScreen() {
 
         {/* Service Type */}
         <div style={section}>
-          <label style={labelStyle}>Aina ya Huduma</label>
+          <label style={labelStyle}>{t('booking.serviceType')}</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {SERVICE_TYPES.map(st => {
               const active = selectedServiceType === st.key
@@ -209,7 +211,7 @@ export default function BookingScreen() {
                     fontWeight: 500,
                     color: active ? '#fff' : '#1A1A1A',
                   }}>
-                    {st.label}
+                    {t(st.labelKey)}
                   </span>
                   <span style={{
                     fontFamily: 'Inter',
@@ -227,7 +229,7 @@ export default function BookingScreen() {
 
         {/* Delivery Method */}
         <div style={section}>
-          <label style={labelStyle}>Njia ya Upoaji</label>
+          <label style={labelStyle}>{t('booking.deliveryMethod')}</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {DELIVERY_METHODS.map(dm => {
               const active = selectedDelivery === dm.key
@@ -257,7 +259,7 @@ export default function BookingScreen() {
                     textAlign: 'center',
                     lineHeight: 1.3,
                   }}>
-                    {dm.label}
+                    {t(dm.labelKey)}
                   </span>
                 </button>
               )
@@ -267,9 +269,9 @@ export default function BookingScreen() {
 
         {/* Note */}
         <div style={section}>
-          <label style={labelStyle}>Maoni <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(hiari)</span></label>
+          <label style={labelStyle}>{t('booking.note')} <span style={{ fontWeight: 400, color: '#9CA3AF' }}>({t('booking.optional')})</span></label>
           <textarea
-            placeholder="Maoni ya ziada..."
+            placeholder={t('booking.notePlaceholder')}
             value={note}
             onChange={e => setNote(e.target.value)}
             rows={3}
@@ -294,7 +296,7 @@ export default function BookingScreen() {
           textAlign: 'center',
         }}>
           <div style={{ fontFamily: 'Inter', fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
-            Gharama Inayokadiriwa
+            {t('booking.estimatedCost')}
           </div>
           <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 700, color: '#1A5C2A' }}>
             {price > 0 ? fmt(price) : '—'}
@@ -350,10 +352,10 @@ export default function BookingScreen() {
                 display: 'inline-block',
                 animation: 'spin 0.6s linear infinite',
               }} />
-              Inatuma...
+              {t('booking.sending')}
             </>
           ) : (
-            'Tuma Ombi'
+            t('booking.sendRequest')
           )}
         </button>
 
