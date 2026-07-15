@@ -66,25 +66,40 @@ class _BookingScreenState extends State<BookingScreen> {
   final List<Map<String, dynamic>> _categories = [
     {
       'id': 'fundi', 'sw': 'Fundi', 'emoji': '🛠️',
-      'subs': ['Ujezi', 'Umeme', 'Maji/Plumbing', 'Kuchomelea', 'Fanicha', 'AC & Ubaridi', 'Simu & Kompyuta']
+      'subs': ['Ujezi/Mason', 'Umeme', 'Maji/Plumbing', 'Kuchomelea', 'Fanicha', 'AC & Ubaridi', 'Simu & Kompyuta', 'Makanika (Gari)']
     },
     {
       'id': 'dalali', 'sw': 'Dalali', 'emoji': '🏘️',
-      'subs': ['Nyumba (Kupanga)', 'Nyumba (Kununua)', 'Viwanja', 'Magari', 'Mashamba', 'Vifaa vya Sherehe']
+      'subs': ['Nyumba (Kupanga)', 'Nyumba (Kununua)', 'Viwanja', 'Magari', 'Mashamba', 'Vifaa vya Sherehe', 'Ofisi/Fremu']
     },
     {
       'id': 'electronics', 'sw': 'Elektroniki', 'emoji': '📱',
-      'subs': ['Simu', 'Laptop/PC', 'TV & Audio', 'Fridge & Cookers']
+      'subs': ['Simu & Tablet', 'Laptop/PC', 'TV & Audio', 'Fridge & Cookers', 'Solars & Power', 'Camera & Games']
     },
     {
       'id': 'clothing', 'sw': 'Mavazi', 'emoji': '👕',
-      'subs': ['Nguo za Kike', 'Nguo za Kiume', 'Nguo za Watoto', 'Uniforms']
+      'subs': ['Nguo za Kike', 'Nguo za Kiume', 'Nguo za Watoto', 'Uniforms', 'Mitumba (Grade A)', 'Vitenge & Batiki']
     },
-    {'id': 'shoes', 'sw': 'Viatu', 'emoji': '👟', 'subs': ['Raba', 'Viatu vya Ofisi', 'Sandals', 'Watoto']},
-    {'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄', 'subs': ['Make-up', 'Perfume', 'Mafuta ya Ngozi']},
-    {'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨', 'subs': ['Rangi', 'Mabati', 'Misumari/Saruji']},
-    {'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳', 'subs': ['Vyombo', 'Majiko/Gesi', 'Fridge']},
-    {'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯', 'subs': []},
+    {
+      'id': 'shoes', 'sw': 'Viatu', 'emoji': '👟',
+      'subs': ['Raba/Sneakers', 'Viatu vya Ofisi', 'Sandals/Pendo', 'Viatu vya Shule', 'Viatu vya Watoto']
+    },
+    {
+      'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄',
+      'subs': ['Make-up', 'Perfume', 'Mafuta ya Ngozi', 'Wigi & Nywele', 'Saluni & Kucha']
+    },
+    {
+      'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨',
+      'subs': ['Rangi & Brashi', 'Mabati & Misumari', 'Saruji & Nondo', 'Vifaa vya Umeme', 'Tiles & Marbles']
+    },
+    {
+      'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳',
+      'subs': ['Vyombo vya Jikoni', 'Majiko ya Gesi', 'Fridge & Mikrowevu', 'Mapambo ya Ndani', 'Pazia & Mashuka']
+    },
+    {
+      'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯',
+      'subs': ['Chakula/Soko', 'Dawa/Pharmacy', 'Usafiri/Logistics', 'Huduma Nyingine']
+    },
   ];
 
   final List<Map<String, dynamic>> _serviceTypes = [

@@ -8,15 +8,15 @@ class CategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> categories = [
-      {'id': 'fundi', 'sw': 'Fundi', 'emoji': '🛠️', 'desc': 'Ujezi, Umeme, Maji, Kuchomelea...'},
-      {'id': 'dalali', 'sw': 'Dalali', 'emoji': '🏘️', 'desc': 'Viwanja, Nyumba, Magari, Vifaa...'},
-      {'id': 'electronics', 'sw': 'Elektroniki', 'emoji': '📱', 'desc': 'Simu, Laptop, TV, Redio...'},
-      {'id': 'clothing', 'sw': 'Mavazi', 'emoji': '👕', 'desc': 'Nguo za kike, kiume na watoto'},
-      {'id': 'shoes', 'sw': 'Viatu', 'emoji': '👟', 'desc': 'Raba, Ofisini, Sandals, Watoto'},
-      {'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄', 'desc': 'Make-up, Perfume, Mafuta'},
-      {'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨', 'desc': 'Rangi, Mabati, Misumari, Saruji'},
-      {'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳', 'desc': 'Vyombo, Majiko, Fridge, Mapambo'},
-      {'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯', 'desc': 'Bidhaa nyingine yoyote unayotaka'},
+      {'id': 'fundi', 'sw': 'Fundi', 'emoji': '🛠️', 'desc': 'Ujezi, Umeme, Maji, AC, Simu & Makanika'},
+      {'id': 'dalali', 'sw': 'Dalali', 'emoji': '🏘️', 'desc': 'Nyumba, Viwanja, Magari, Mashamba, Ofisi'},
+      {'id': 'electronics', 'sw': 'Elektroniki', 'emoji': '📱', 'desc': 'Simu, Laptop, TV, Fridge, Solars'},
+      {'id': 'clothing', 'sw': 'Mavazi', 'emoji': '👕', 'desc': 'Nguo za jinsia zote, Mitumba & Vitenge'},
+      {'id': 'shoes', 'sw': 'Viatu', 'emoji': '👟', 'desc': 'Raba, Ofisini, Sandals, Shule & Watoto'},
+      {'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄', 'desc': 'Make-up, Perfume, Nywele & Saluni'},
+      {'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨', 'desc': 'Rangi, Mabati, Saruji, Tiles & Wiring'},
+      {'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳', 'desc': 'Vyombo, Majiko, Fridge & Mapambo'},
+      {'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯', 'desc': 'Chakula, Dawa, Usafiri & Huduma nyingine'},
     ];
 
     return Scaffold(
