@@ -78,11 +78,11 @@ class _BookingScreenState extends State<BookingScreen> {
     },
     {
       'id': 'clothing', 'sw': 'Mavazi', 'emoji': '👕',
-      'subs': ['Nguo za Kike', 'Nguo za Kiume', 'Nguo za Watoto', 'Uniforms', 'Mitumba (Grade A)', 'Vitenge & Batiki']
+      'subs': ['Wanawake', 'Wanaume', 'Watoto', 'Mitumba (Grade A)', 'Vitenge & Batiki', 'Uniforms']
     },
     {
       'id': 'shoes', 'sw': 'Viatu', 'emoji': '👟',
-      'subs': ['Raba/Sneakers', 'Viatu vya Ofisi', 'Sandals/Pendo', 'Viatu vya Shule', 'Viatu vya Watoto']
+      'subs': ['Wanawake', 'Wanaume', 'Watoto', 'Raba/Sneakers', 'Viatu vya Ofisi', 'Sandals/Pendo']
     },
     {
       'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄',
