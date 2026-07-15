@@ -16,6 +16,7 @@ class CategoriesScreen extends StatelessWidget {
       {'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄', 'desc': 'Make-up, Perfume, Nywele & Saluni'},
       {'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨', 'desc': 'Rangi, Mabati, Saruji, Tiles & Wiring'},
       {'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳', 'desc': 'Vyombo, Majiko, Fridge & Mapambo'},
+      {'id': 'entertainment', 'sw': 'Burudani', 'emoji': '🎉', 'desc': 'MC, DJ, Kodi Music System & Sherehe'},
       {'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯', 'desc': 'Chakula, Dawa, Usafiri & Huduma nyingine'},
     ];
 

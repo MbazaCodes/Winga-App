@@ -80,16 +80,12 @@ class _BookingScreenState extends State<BookingScreen> {
 
   final List<Map<String, dynamic>> _categories = [
     {
-      'id': 'fundi', 'sw': 'Fundi', 'emoji': '🛠️',
+      'id': 'fundi', 'sw': 'Tafuta Fundi', 'emoji': '🛠️',
       'subs': ['Ujezi/Mason', 'Umeme', 'Maji/Plumbing', 'Kuchomelea', 'Fanicha', 'AC & Ubaridi', 'Simu & Kompyuta', 'Makanika (Gari)']
     },
     {
-      'id': 'dalali', 'sw': 'Dalali', 'emoji': '🏘️',
+      'id': 'dalali', 'sw': 'Tafuta Dalali', 'emoji': '🏘️',
       'subs': ['Nyumba (Kupanga)', 'Nyumba (Kununua)', 'Viwanja', 'Magari', 'Mashamba', 'Vifaa vya Sherehe', 'Ofisi/Fremu']
-    },
-    {
-      'id': 'electronics', 'sw': 'Elektroniki', 'emoji': '📱',
-      'subs': ['Simu & Tablet', 'Laptop/PC', 'TV & Audio', 'Fridge & Cookers', 'Solars & Power', 'Camera & Games']
     },
     {
       'id': 'clothing', 'sw': 'Mavazi', 'emoji': '👕',
@@ -100,16 +96,24 @@ class _BookingScreenState extends State<BookingScreen> {
       'subs': ['Wanawake', 'Wanaume', 'Watoto', 'Raba/Sneakers', 'Viatu vya Ofisi', 'Sandals/Pendo']
     },
     {
+      'id': 'electronics', 'sw': 'Elektroniki', 'emoji': '📱',
+      'subs': ['Simu & Tablet', 'Laptop/PC', 'TV & Audio', 'Fridge & Cookers', 'Solars & Power']
+    },
+    {
       'id': 'beauty', 'sw': 'Vipodozi', 'emoji': '💄',
       'subs': ['Make-up', 'Perfume', 'Mafuta ya Ngozi', 'Wigi & Nywele', 'Saluni & Kucha']
     },
     {
-      'id': 'hardware', 'sw': 'Ujenzi', 'emoji': '🔨',
+      'id': 'hardware', 'sw': 'Hardware', 'emoji': '🔨',
       'subs': ['Rangi & Brashi', 'Mabati & Misumari', 'Saruji & Nondo', 'Vifaa vya Umeme', 'Tiles & Marbles']
     },
     {
-      'id': 'kitchen', 'sw': 'Nyumbani', 'emoji': '🍳',
+      'id': 'kitchen', 'sw': 'Vifaa vya Nyumbani', 'emoji': '🍳',
       'subs': ['Vyombo vya Jikoni', 'Majiko ya Gesi', 'Fridge & Mikrowevu', 'Mapambo ya Ndani', 'Pazia & Mashuka']
+    },
+    {
+      'id': 'entertainment', 'sw': 'Burudani', 'emoji': '🎉',
+      'subs': ['MC', 'DJ', 'Kodi Music System', 'Decoration', 'Catering']
     },
     {
       'id': 'other', 'sw': 'Zaidi', 'emoji': '⋯',
