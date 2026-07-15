@@ -34,22 +34,37 @@ class _BookingScreenState extends State<BookingScreen> {
 
   final Map<String, Map<String, List<String>>> _locationData = {
     'Dar es Salaam': {
-      'Ilala': ['Kariakoo', 'Gerezani', 'Jangwani', 'Upanga', 'Kisutu', 'Mchafukoge'],
-      'Kinondoni': ['Magomeni', 'Makumbusho', 'Kijitonyama', 'Hananasif', 'Mwananyamala'],
-      'Temeke': ['Kurasini', 'Mbagala', 'Chang\'ombe', 'Keko'],
-      'Ubungo': ['Ubungo', 'Manzese', 'Mabibo', 'Kimara', 'Mbezi'],
-      'Kigamboni': ['Kigamboni', 'Tungi', 'Mjimwema'],
+      'Ilala': ['Kariakoo', 'Gerezani', 'Jangwani', 'Upanga', 'Kisutu', 'Mchafukoge', 'Tabata', 'Segerea', 'Ukonga'],
+      'Kinondoni': ['Magomeni', 'Makumbusho', 'Kijitonyama', 'Hananasif', 'Mwananyamala', 'Oysterbay', 'Masaki', 'Mikocheni', 'Kawe'],
+      'Temeke': ['Kurasini', 'Mbagala', 'Chang\'ombe', 'Keko', 'Yombo Vituka', 'Toangoma'],
+      'Ubungo': ['Ubungo', 'Manzese', 'Mabibo', 'Kimara', 'Mbezi', 'Kibamba', 'Kwembe'],
+      'Kigamboni': ['Kigamboni', 'Tungi', 'Mjimwema', 'Kibada', 'Somangila'],
     },
     'Arusha': {
-      'Arusha City': ['Sekei', 'Themi', 'Kaloleni', 'Levolosi'],
-      'Arumeru': ['Usa River', 'Akheri'],
+      'Arusha City': ['Sekei', 'Themi', 'Kaloleni', 'Levolosi', 'Ngarenaro', 'Ungu-LTD', 'Olasiti'],
+      'Arumeru': ['Usa River', 'Akheri', 'Leguruki', 'King\'ori'],
+      'Monduli': ['Monduli Mjini', 'Engutoto'],
     },
     'Mwanza': {
-      'Nyamagana': ['Mwanza City', 'Pasiansi', 'Igogo'],
-      'Ilemela': ['Kirumba', 'Kitangari'],
+      'Nyamagana': ['Mwanza City', 'Pasiansi', 'Igogo', 'Mbugani', 'Butimba', 'Nyegezi'],
+      'Ilemela': ['Kirumba', 'Kitangari', 'Sangabuye', 'Buswelu'],
     },
     'Dodoma': {
-      'Dodoma City': ['Kikuyu', 'Tambukareli', 'Majengo'],
+      'Dodoma City': ['Kikuyu', 'Tambukareli', 'Majengo', 'Hazina', 'Makole', 'Ipagala'],
+      'Bahi': ['Bahi Mjini'],
+      'Chamwino': ['Buigiri', 'Msagali'],
+    },
+    'Mbeya': {
+      'Mbeya City': ['Sisimba', 'Iyunga', 'Mwanjelwa', 'Mbalizi Road'],
+      'Rungwe': ['Tukuyu Mjini'],
+    },
+    'Kilimanjaro': {
+      'Moshi Mjini': ['Kiboriloni', 'Majengo', 'Soweto', 'Bondeni'],
+      'Hai': ['Bomang\'ombe'],
+    },
+    'Pwani': {
+      'Kibaha': ['Maili Moja', 'Tumbi', 'Visiga'],
+      'Bagamoyo': ['Dunda', 'Magomeni'],
     }
   };
 
@@ -256,25 +271,29 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Widget _locationSelectors() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))]
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))]
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _dropdown('Mkoa (Region)', _selectedRegion, _locationData.keys.toList(), (v) {
+          _label('Mkoa (Region)'),
+          _dropdown('Chagua Mkoa...', _selectedRegion, _locationData.keys.toList(), (v) {
             setState(() {
               _selectedRegion = v;
               _selectedDistrict = null;
               _selectedWard = null;
             });
           }),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          if (_selectedRegion != null)
-            _dropdown('Wilaya (District)', _selectedDistrict, _locationData[_selectedRegion]!.keys.toList(), (v) {
+          if (_selectedRegion != null) ...[
+            _label('Wilaya (District)'),
+            _dropdown('Chagua Wilaya...', _selectedDistrict, _locationData[_selectedRegion]!.keys.toList(), (v) {
               setState(() {
                 _selectedDistrict = v;
                 _selectedWard = null;
@@ -283,44 +302,62 @@ class _BookingScreenState extends State<BookingScreen> {
                 }
               });
             }),
+            const SizedBox(height: 16),
+          ],
 
-          const SizedBox(height: 12),
-
-          if (_selectedDistrict != null)
-            _dropdown('Kata (Ward)', _selectedWard, _locationData[_selectedRegion]![_selectedDistrict]!, (v) {
+          if (_selectedDistrict != null) ...[
+            _label('Kata (Ward)'),
+            _dropdown('Chagua Kata...', _selectedWard, _locationData[_selectedRegion]![_selectedDistrict]!, (v) {
               setState(() => _selectedWard = v);
             }),
+            const SizedBox(height: 16),
+          ],
 
-          const SizedBox(height: 12),
-
+          _label('Maelezo ya Mahali / GPS'),
           Row(
             children: [
               Expanded(
-                child: _textField(_exactLocationCtrl, 'Mtaa / Nyumba / Ofisi...', shadow: false),
+                child: _textField(_exactLocationCtrl, 'Mtaa, Nyumba, au Ofisi...', shadow: false),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ramani inakuja hivi punde...'))
+                    const SnackBar(content: Text('📍 Inatafuta eneo lako kwa GPS...'), behavior: SnackBarBehavior.floating)
                   );
                 },
                 child: Container(
-                  height: 54, width: 54,
+                  height: 56, width: 56,
                   decoration: BoxDecoration(
-                    color: WingaColors.primary.withOpacity(0.1),
+                    gradient: const LinearGradient(colors: [WingaColors.primary, Color(0xFF0F3D1A)]),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: WingaColors.primary.withOpacity(0.2)),
+                    boxShadow: [BoxShadow(color: WingaColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
                   ),
-                  child: const Icon(Icons.location_on_rounded, color: WingaColors.primary),
+                  child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 22),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () {
+               ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Ramani inafunguka kuweka Pin...'), behavior: SnackBarBehavior.floating)
+              );
+            },
+            icon: const Icon(Icons.map_outlined, size: 16, color: WingaColors.primary),
+            label: const Text('Fungua Ramani Kuweka Pin',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: WingaColors.primary)),
           ),
         ],
       ),
     );
   }
+
+  Widget _label(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 6, left: 4),
+    child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+  );
 
   Widget _dropdown(String hint, String? value, List<String> items, ValueChanged<String?> onChanged) {
     return Container(
