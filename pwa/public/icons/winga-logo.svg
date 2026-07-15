@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A5C2A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F3D1A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F9A825;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E65100;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.12"/>
+
+  <!-- Map pin body -->
+  <path d="M256 100
+    C206 100 165 141 165 191
+    C165 241 256 380 256 380
+    C256 380 347 241 347 191
+    C347 141 306 100 256 100Z"
+    fill="url(#pinGrad)"
+    filter="url(#shadow)"/>
+
+  <!-- Pin shadow ellipse at bottom -->
+  <ellipse cx="256" cy="378" rx="24" ry="8" fill="#000" opacity="0.15"/>
+
+  <!-- White circle cutout inside pin -->
+  <circle cx="256" cy="191" r="42" fill="#ffffff"/>
+
+  <!-- W letter inside the circle -->
+  <text x="256" y="208"
+    text-anchor="middle"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="46"
+    font-weight="900"
+    fill="#1A5C2A"
+    letter-spacing="-2">W</text>
+
+  <!-- Gold accent dot at top of pin -->
+  <circle cx="256" cy="100" r="10" fill="#F9A825" opacity="0.8"/>
+
+  <!-- WINGA wordmark below -->
+  <text x="256" y="450"
+    text-anchor="middle"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="52"
+    font-weight="900"
+    fill="#ffffff"
+    letter-spacing="8">WINGA</text>
+
+  <!-- Tagline -->
+  <text x="256" y="485"
+    text-anchor="middle"
+    font-family="Arial, sans-serif"
+    font-size="18"
+    font-weight="400"
+    fill="#F9A825"
+    letter-spacing="3"
+    opacity="0.9">APP</text>
+</svg>
