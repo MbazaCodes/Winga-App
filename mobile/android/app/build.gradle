@@ -18,7 +18,11 @@ android {
 
     defaultConfig {
         applicationId "com.winga.app"
+<<<<<<< HEAD
         minSdkVersion flutter.minSdkVersion
+=======
+        minSdk 21
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
         targetSdk 36
         versionCode 1
         versionName "1.0.0"

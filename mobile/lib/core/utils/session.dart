@@ -13,6 +13,10 @@ class WingaSession {
     await p.setString(AppConstants.userTypeKey, type.name);
   }
 
+<<<<<<< HEAD
+=======
+  // Keep sync setters for backward compat but await internally
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
   static void setSessionUid(String uid) {
     _uid = uid;
     SharedPreferences.getInstance().then((p) => p.setString(AppConstants.sessionKey, uid));
@@ -23,6 +27,7 @@ class WingaSession {
     SharedPreferences.getInstance().then((p) => p.setString(AppConstants.userTypeKey, type.name));
   }
 
+<<<<<<< HEAD
   static Future<void> setOnboarded() async {
     final p = await SharedPreferences.getInstance();
     await p.setBool(AppConstants.onboardedKey, true);
@@ -33,6 +38,8 @@ class WingaSession {
     return p.getBool(AppConstants.onboardedKey) ?? false;
   }
 
+=======
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
   static String? get uid => _uid;
   static String get safeUid => _uid ?? '';
   static UserType? get userType => _userType;

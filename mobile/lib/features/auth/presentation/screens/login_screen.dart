@@ -36,6 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() { _isLoading = true; _error = null; });
 
     try {
+<<<<<<< HEAD
       final phone = '+255$_cleanPhone';
       debugPrint('Attempting signInWithOtp for: $phone');
 
@@ -53,6 +54,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       debugPrint('Login Error: $e');
       if (!mounted) return;
       setState(() => _error = 'Hitilafu: $e');
+=======
+      await Supabase.instance.client.auth.signInWithOtp(
+        phone: '+255$_cleanPhone',
+      );
+      if (!mounted) return;
+      context.push('/otp?phone=${_cleanPhone}');
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Hitilafu imetokea. Jaribu tena.');
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -196,11 +210,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Expanded(
                         child: TextFormField(
                           controller: _phoneCtrl,
+<<<<<<< HEAD
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(9),
                           ],
+=======
+                          keyboardType: TextInputType.phone,
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
                           autofillHints: const [AutofillHints.telephoneNumberNational],
                           style: const TextStyle(fontFamily: 'Inter', fontSize: 16,
                               fontWeight: FontWeight.w500),

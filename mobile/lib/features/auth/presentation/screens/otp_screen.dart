@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:flutter/services.dart';
+=======
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -37,10 +40,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   void initState() {
     super.initState();
     _startTimer();
+<<<<<<< HEAD
     // Auto focus first box
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
     });
+=======
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
   }
 
   @override
@@ -86,13 +92,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     setState(() { _isLoading = true; _error = null; });
 
     try {
+<<<<<<< HEAD
       debugPrint('Verifying OTP for phone: +255${widget.phone} with token: $_otp');
+=======
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
       final res = await Supabase.instance.client.auth.verifyOTP(
         phone: '+255${widget.phone}',
         token: _otp,
         type: OtpType.sms,
       );
 
+<<<<<<< HEAD
       if (res.session == null) {
         setState(() => _error = 'Uthibitisho umeshindwa. Tafadhali jaribu login upya.');
         return;
@@ -101,6 +111,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       final userId = res.session!.user.id;
       debugPrint('Auth successful. User ID: $userId');
 
+=======
+      final userId = res.session?.user.id;
+      if (userId == null) {
+        setState(() => _error = 'Uthibitisho umeshindwa. Jaribu tena.');
+        return;
+      }
+
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
       // Check our users table
       final userRow = await Supabase.instance.client
           .from('users')
@@ -111,6 +129,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       if (!mounted) return;
 
       if (userRow == null) {
+<<<<<<< HEAD
         debugPrint('User record not found in public.users. Creating one...');
         // New user — create customer record
         try {
@@ -140,6 +159,37 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       }
     } on AuthException catch (e) {
       debugPrint('AuthException: ${e.message}');
+=======
+        // New user — create customer record
+        await Supabase.instance.client.from('users').insert({
+          'id': userId,
+          'phone': '+255${widget.phone}',
+          'user_type': 'customer',
+          'is_verified': true,
+          'name': 'Mteja Mpya',
+        });
+
+        WingaSession.setSessionUid(userId);
+        WingaSession.setUserType(UserType.customer);
+        if (mounted) context.go('/home');
+        return;
+      }
+
+      // Existing user — route by type
+      final userType = userRow['user_type'] as String? ?? 'customer';
+      WingaSession.setSessionUid(userId);
+      WingaSession.setUserType(
+        userType == 'winga' ? UserType.winga : UserType.customer,
+      );
+
+      if (!mounted) return;
+      if (userType == 'winga') {
+        context.go('/winga-home');
+      } else {
+        context.go('/home');
+      }
+    } on AuthException catch (e) {
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
       if (!mounted) return;
       setState(() {
         _error = e.message.contains('Invalid')
@@ -147,8 +197,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             : e.message;
       });
     } catch (e) {
+<<<<<<< HEAD
       debugPrint('Generic Exception during verify: $e');
       if (mounted) setState(() => _error = 'Hitilafu: $e');
+=======
+      if (!mounted) return;
+      setState(() => _error = 'Hitilafu imetokea. Jaribu tena.');
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -163,10 +218,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       }
       final next = (i + digits.length).clamp(0, 5);
       _focusNodes[next].requestFocus();
+<<<<<<< HEAD
     } else if (val.isNotEmpty) {
       if (i < 5) _focusNodes[i + 1].requestFocus();
     } else if (val.isEmpty) {
       if (i > 0) _focusNodes[i - 1].requestFocus();
+=======
+    } else if (val.isNotEmpty && i < 5) {
+      _focusNodes[i + 1].requestFocus();
+    } else if (val.isEmpty && i > 0) {
+      _focusNodes[i - 1].requestFocus();
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
     }
     setState(() => _error = null);
     if (_isComplete) _verify();
@@ -184,6 +246,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         ),
         title: const Text('Thibitisha Namba'),
       ),
+<<<<<<< HEAD
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -305,6 +368,127 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: 32),
             ],
           ),
+=======
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          children: [
+            const SizedBox(height: 32),
+
+            // Icon
+            Container(
+              width: 88, height: 88,
+              decoration: const BoxDecoration(
+                color: WingaColors.primarySurface, shape: BoxShape.circle),
+              child: const Icon(Icons.sms_outlined,
+                  size: 44, color: WingaColors.primary),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Ingiza Code ya OTP',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 22,
+                  fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 14,
+                    color: WingaColors.textSecondary),
+                children: [
+                  const TextSpan(text: 'Tumetuma SMS kwenda '),
+                  TextSpan(
+                    text: '+255 ${widget.phone}',
+                    style: const TextStyle(fontWeight: FontWeight.w600,
+                        color: WingaColors.primary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // OTP boxes
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(6, (i) => _OtpBox(
+                controller: _ctrls[i],
+                focusNode: _focusNodes[i],
+                onChanged: (v) => _onDigitChanged(v, i),
+                hasError: _error != null,
+              )),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Error
+            if (_error != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: WingaColors.errorLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.error_outline_rounded,
+                      size: 16, color: WingaColors.error),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_error!,
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 12,
+                        color: WingaColors.error))),
+                ]),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Countdown / Resend
+            if (_canResend)
+              TextButton(
+                onPressed: _isResending ? null : _resend,
+                child: _isResending
+                    ? const SizedBox(width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: WingaColors.primary))
+                    : const Text('Tuma Code Tena',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 14,
+                            fontWeight: FontWeight.w600, color: WingaColors.primary)),
+              )
+            else
+              Text(
+                'Tuma tena baada ya 00:${_seconds.toString().padLeft(2, '0')}',
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13,
+                    color: WingaColors.textSecondary),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Security note
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: WingaColors.primarySurface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(children: [
+                Icon(Icons.lock_outline_rounded, size: 15, color: WingaColors.primary),
+                SizedBox(width: 8),
+                Expanded(child: Text(
+                  'Usalama wako ni muhimu. Kamwe usishirikishe code hii na mtu yeyote.',
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                      color: WingaColors.primary),
+                )),
+              ]),
+            ),
+
+            const Spacer(),
+
+            WingaButton(
+              label: 'Thibitisha na Endelea',
+              isLoading: _isLoading,
+              onPressed: _isComplete && !_isLoading ? _verify : null,
+            ),
+            const SizedBox(height: 32),
+          ],
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
         ),
       ),
     );
@@ -327,15 +511,24 @@ class _OtpBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+<<<<<<< HEAD
       width: 44, height: 58,
+=======
+      width: 48, height: 58,
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
       child: TextField(
         controller: controller,
         focusNode: focusNode,
         textAlign: TextAlign.center,
+<<<<<<< HEAD
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
         ],
+=======
+        keyboardType: TextInputType.number,
+        maxLength: 6,  // allow paste
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
         style: const TextStyle(fontFamily: 'Inter', fontSize: 22,
             fontWeight: FontWeight.w700),
         decoration: InputDecoration(

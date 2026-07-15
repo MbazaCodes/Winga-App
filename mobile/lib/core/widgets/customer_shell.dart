@@ -6,7 +6,11 @@ class CustomerShell extends StatelessWidget {
   final Widget child;
   const CustomerShell({super.key, required this.child});
 
+<<<<<<< HEAD
   static const _tabs = ['/home', '/explore', '/book', '/messages', '/profile'];
+=======
+  static const _tabs = ['/home', '/requests', '/earnings', '/profile'];
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
 
   int _getIndex(BuildContext context) {
     final loc = GoRouterState.of(context).uri.path;
@@ -22,7 +26,11 @@ class CustomerShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: WingaColors.white,
+<<<<<<< HEAD
           border: const Border(top: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
+=======
+          border: const Border(top: BorderSide(color: WingaColors.borderLight, width: 1)),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2))],
         ),
         child: SafeArea(
@@ -30,11 +38,23 @@ class CustomerShell extends StatelessWidget {
             height: 62,
             child: Row(
               children: [
+<<<<<<< HEAD
                 _NavItem(emoji: '🏠', label: 'Home', isActive: idx == 0, onTap: () => context.go('/home')),
                 _NavItem(emoji: '🔍', label: 'Discover', isActive: idx == 1, onTap: () => context.go('/explore')),
                 _NavFabItem(onTap: () => context.push('/book')),
                 _NavItem(emoji: '💬', label: 'Messages', isActive: idx == 3, onTap: () => context.go('/messages')),
                 _NavItem(emoji: '👤', label: 'Profile', isActive: idx == 4, onTap: () => context.go('/profile')),
+=======
+                _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded,
+                  label: 'Nyumbani', isActive: idx == 0, onTap: () => context.go('/home')),
+                _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded,
+                  label: 'Safari', isActive: idx == 1, onTap: () => context.go('/requests')),
+                _NavFabItem(onTap: () => context.push('/book/service')),
+                _NavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded,
+                  label: 'Mapato', isActive: idx == 2, onTap: () => context.go('/earnings')),
+                _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded,
+                  label: 'Wasifu', isActive: idx == 3, onTap: () => context.go('/profile')),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
               ],
             ),
           ),
@@ -45,11 +65,19 @@ class CustomerShell extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
+<<<<<<< HEAD
   final String emoji;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
   const _NavItem({required this.emoji, required this.label, required this.isActive, required this.onTap});
+=======
+  final IconData icon, activeIcon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  const _NavItem({required this.icon, required this.activeIcon, required this.label, required this.isActive, required this.onTap});
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +88,19 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+<<<<<<< HEAD
             Text(emoji, style: TextStyle(fontSize: 20, color: isActive ? null : Colors.grey)),
             const SizedBox(height: 3),
             Text(label, style: TextStyle(fontFamily: 'Inter', fontSize: 10,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               color: isActive ? WingaColors.primary : const Color(0xFF9CA3AF))),
+=======
+            Icon(isActive ? activeIcon : icon, size: 24, color: isActive ? WingaColors.primary : WingaColors.textLight),
+            const SizedBox(height: 3),
+            Text(label, style: TextStyle(fontFamily: 'Inter', fontSize: 10,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              color: isActive ? WingaColors.primary : WingaColors.textLight)),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
           ],
         ),
       ),
@@ -85,11 +121,19 @@ class _NavFabItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
+<<<<<<< HEAD
               width: 48, height: 48,
               decoration: BoxDecoration(
                 color: WingaColors.primary, shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: WingaColors.primary.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))]),
               child: const Icon(Icons.add, color: Colors.white, size: 28),
+=======
+              width: 46, height: 46,
+              decoration: BoxDecoration(
+                color: WingaColors.primary, shape: BoxShape.circle,
+                boxShadow: WingaShadows.button),
+              child: const Icon(Icons.add, color: Colors.white, size: 24),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
             ),
           ],
         ),
@@ -102,7 +146,11 @@ class WingaShell extends StatelessWidget {
   final Widget child;
   const WingaShell({super.key, required this.child});
 
+<<<<<<< HEAD
   static const _tabs = ['/winga/home', '/winga/requests', '/book', '/winga/earnings', '/winga/profile'];
+=======
+  static const _tabs = ['/winga-home', '/winga-requests', '/winga-earnings', '/winga-profile'];
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
 
   int _getIndex(BuildContext context) {
     final loc = GoRouterState.of(context).uri.path;
@@ -118,7 +166,11 @@ class WingaShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: WingaColors.white,
+<<<<<<< HEAD
           border: const Border(top: BorderSide(color: Color(0xFFF3F4F6), width: 1)),
+=======
+          border: const Border(top: BorderSide(color: WingaColors.borderLight, width: 1)),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -2))],
         ),
         child: SafeArea(
@@ -126,11 +178,23 @@ class WingaShell extends StatelessWidget {
             height: 62,
             child: Row(
               children: [
+<<<<<<< HEAD
                 _NavItem(emoji: '📊', label: 'Dashboard', isActive: idx == 0, onTap: () => context.go('/winga/home')),
                 _NavItem(emoji: '📋', label: 'Requests', isActive: idx == 1, onTap: () => context.go('/winga/requests')),
                 _NavFabItem(onTap: () => context.push('/book')),
                 _NavItem(emoji: '💰', label: 'Earnings', isActive: idx == 3, onTap: () => context.go('/winga/earnings')),
                 _NavItem(emoji: '👤', label: 'Profile', isActive: idx == 4, onTap: () => context.go('/winga/profile')),
+=======
+                _NavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded,
+                  label: 'Dashboard', isActive: idx == 0, onTap: () => context.go('/winga-home')),
+                _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded,
+                  label: 'Maombi', isActive: idx == 1, onTap: () => context.go('/winga-requests')),
+                _NavFabItem(onTap: () {}),
+                _NavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded,
+                  label: 'Mapato', isActive: idx == 2, onTap: () => context.go('/winga-earnings')),
+                _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded,
+                  label: 'Wasifu', isActive: idx == 3, onTap: () => context.go('/winga-profile')),
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
               ],
             ),
           ),

@@ -17,8 +17,12 @@ dependencies:
   go_router: ^13.0.0
 
   # Backend
+<<<<<<< HEAD
   supabase_flutter: ^2.9.1
   flutter_dotenv: ^5.2.1
+=======
+  supabase_flutter: ^2.6.0
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
 
   # Local storage & session
   shared_preferences: ^2.3.2
@@ -40,7 +44,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+<<<<<<< HEAD
     - .env
+=======
+>>>>>>> 630074e69bf7ffb62fb17172b66a523961758412
     - assets/images/
     - assets/icons/
     - assets/animations/
